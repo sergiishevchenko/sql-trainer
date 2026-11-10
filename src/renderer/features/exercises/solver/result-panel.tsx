@@ -88,7 +88,7 @@ export function ResultPanel({
       <div className="flex shrink-0 items-center justify-between border-b px-3 py-1.5">
         <TabsList className="h-8">
           {runnable && <TabsTrigger value="result">{t('solver.result')}</TabsTrigger>}
-          {runnable && <TabsTrigger value="expected">{t('solver.expected')}</TabsTrigger>}
+          {runnable && !testMode && <TabsTrigger value="expected">{t('solver.expected')}</TabsTrigger>}
           <TabsTrigger value="check" data-testid="check-tab">
             {t('solver.check')}
             {grade && (grade.correct ? <CircleCheck className="text-success" /> : <CircleX className="text-destructive" />)}

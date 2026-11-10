@@ -9,6 +9,7 @@ setupMonaco()
 export interface SqlEditorHandle {
   format: () => void
   focus: () => void
+  insert: (text: string) => void
 }
 
 export function SqlEditor({
@@ -43,7 +44,14 @@ export function SqlEditor({
         editor.executeEdits('format', [{ range: editor.getModel()!.getFullModelRange(), text: formatted }])
         editor.pushUndoStop()
       },
-      focus: () => editorRef.current?.focus()
+      focus: () => editorRef.current?.focus(),
+      insert: (text: string) => {
+        const editor = editorRef.current
+        const selection = editor?.getSelection()
+        if (!editor || !selection) return
+        editor.executeEdits('insert', [{ range: selection, text, forceMoveMarkers: true }])
+        editor.focus()
+      }
     }
   }, [handleRef])
 
@@ -79,7 +87,7 @@ export function SqlEditor({
         options={{
           readOnly,
           fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace",
-          fontLigatures: true,
+          fontLigatures: false,
           fontSize: settings.data?.editorFontSize ?? 14,
           minimap: { enabled: settings.data?.editorMinimap ?? false },
           wordWrap: settings.data?.editorWordWrap ? 'on' : 'off',

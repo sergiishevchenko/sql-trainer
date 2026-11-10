@@ -55,3 +55,9 @@ export async function typeInEditor(page: Page, sql: string): Promise<void> {
   await page.keyboard.press('Backspace')
   await page.keyboard.insertText(sql)
 }
+
+export async function openRoute(page: Page, route: string): Promise<void> {
+  await page.evaluate((hash) => {
+    ;(globalThis as unknown as { location: { hash: string } }).location.hash = hash
+  }, route)
+}

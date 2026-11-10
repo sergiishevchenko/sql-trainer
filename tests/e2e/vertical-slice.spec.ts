@@ -1,19 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { expect, test, type Page } from '@playwright/test'
-import { createUserDataDir, launchApp, registerUser, typeInEditor } from './app'
+import { expect, test } from '@playwright/test'
+import { createUserDataDir, launchApp, openRoute, registerUser, typeInEditor } from './app'
 
 function referenceSolution(file: string, id: string): string {
   const content = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data/exercises', file), 'utf8')) as {
     exercises: { id: string; solution?: string }[]
   }
   return content.exercises.find((e) => e.id === id)?.solution ?? ''
-}
-
-async function openRoute(page: Page, route: string): Promise<void> {
-  await page.evaluate((hash) => {
-    window.location.hash = hash
-  }, route)
 }
 
 test('register, solve an exercise and keep progress after restart', async () => {

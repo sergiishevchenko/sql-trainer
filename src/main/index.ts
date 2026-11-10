@@ -8,6 +8,7 @@ import { createHandlers } from './ipc/handlers'
 import { contentDir, databasePath, sqlWasmPath, userContentDir, workerScriptPath } from './paths'
 import { applySessionHardening, isTrustedSender, secureWebPreferences } from './security/hardening'
 import { FileTokenStore } from './security/token-store'
+import packageJson from '../../package.json'
 
 if (process.env.SQL_MASTERY_USER_DATA) {
   app.setPath('userData', path.resolve(process.env.SQL_MASTERY_USER_DATA))
@@ -59,7 +60,7 @@ async function bootstrap(): Promise<void> {
   }
 
   const handlers = createHandlers(context, {
-    version: app.getVersion(),
+    version: packageJson.version,
     platform: process.platform,
     userDataPath: app.getPath('userData')
   })

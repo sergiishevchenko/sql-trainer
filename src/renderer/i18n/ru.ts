@@ -42,6 +42,13 @@ export const ru = {
     logout: 'Выйти',
     commandHint: 'Быстрый переход'
   },
+  levels: {
+    beginner: 'SQL Beginner',
+    fundamentals: 'SQL Fundamentals',
+    intermediate: 'Intermediate SQL',
+    advanced: 'Advanced SQL',
+    expert: 'SQL Expert'
+  },
   ranks: {
     novice: 'Новичок',
     apprentice: 'Ученик',
