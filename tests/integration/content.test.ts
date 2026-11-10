@@ -48,6 +48,13 @@ describe('content catalog', () => {
     for (const type of EXERCISE_TYPES) expect(types.has(type), type).toBe(true)
   })
 
+  it('ships the full curriculum of 500 exercises with the planned level split', () => {
+    const perLevel = Object.fromEntries(LEVEL_IDS.map((level) => [level, fx.catalog.exercises.filter((e) => e.level === level).length]))
+    expect(perLevel).toEqual({ beginner: 120, fundamentals: 120, intermediate: 120, advanced: 100, expert: 40 })
+    expect(fx.catalog.exercises).toHaveLength(500)
+    expect(fx.catalog.projects.length).toBeGreaterThan(0)
+  })
+
   it('has unique titles within each module', () => {
     const seen = new Map<string, string>()
     const duplicates: string[] = []
