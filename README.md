@@ -1,126 +1,267 @@
 # SQL Mastery
 
-Десктопный SQL-тренажёр: от первого `SELECT` до рекурсивных CTE, оконных функций, индексов и транзакций. Каждое решение проверяется **реальным выполнением SQL** на изолированной базе, включая скрытые тесты. Приложение работает полностью офлайн; прогресс хранится локально.
+A desktop SQL trainer that takes you from your first `SELECT` to recursive CTEs, window functions, indexes and transactions. Every answer is graded by **actually running SQL** against an isolated database, including hidden tests. The app works fully offline and keeps all progress on your computer. The interface is available in English and Russian.
 
-## Возможности
+![Dashboard](docs/screenshots/dashboard.png)
 
-- **Локальные аккаунты**: регистрация, вход, «запомнить меня», восстановление по коду, смена пароля, удаление аккаунта, несколько пользователей на одном компьютере.
-- **Путь обучения**: 5 уровней, 55 модулей, теория с примерами, задания и итоговый тест модуля, экзамен уровня.
-- **Каталог заданий**: поиск и фильтры по уровню, модулю, типу, сложности и статусу.
-- **10 типов заданий**: написать запрос, исправить ошибку, предсказать результат, выбрать запрос, заполнить пропуски, конструктор JOIN, собрать запрос из частей, объяснить запрос, бизнес-кейс, SQL Challenge.
-- **Режимы практики**: тесты модулей, экзамены уровней, проекты, скоростной раунд, ежедневные задания, работа над ошибками.
-- **SQL Playground**: редактор Monaco, 6 учебных баз, история запросов, сброс базы.
-- **Аналитика и геймификация**: XP, уровни, ранги, серии дней, 30 достижений, статистика по темам и типам ошибок.
+## Features
 
-## Учебный контент
+- **Local accounts**: sign up, sign in, "remember me", recovery codes, password change, account deletion, several users on one computer.
+- **Learning path**: 5 levels, 55 modules, theory with examples, exercises, a final test per module and a level exam.
+- **Exercise catalog**: search and filters by level, topic, type, difficulty, status, XP reward and time to solve.
+- **10 exercise types**: write a query, fix the bug, predict the result, choose the query, fill in the blanks, JOIN builder, assemble the query, explain the query, business case, SQL challenge.
+- **Practice modes**: module tests, level exams, capstone projects, speed round, daily challenge, mistake review.
+- **SQL Playground**: Monaco editor, 6 training databases, query history, database reset.
+- **Analytics and gamification**: XP, levels, ranks, streaks, 30 achievements, statistics by topic and by mistake type.
+- **Multilingual**: English (default) and Russian, switchable at any time; content can be translated with overlay files.
 
-Количество заданий проверяется автоматически (`tests/integration/content.test.ts`) и выводится командой `npm run content:report`.
+## Walkthrough
 
-| Уровень | Модулей | Заданий |
-|---------|---------|---------|
-| Beginner SQL | 11 | 120 |
-| Fundamentals | 10 | 120 |
+The screenshots below follow a typical first session. They are generated from the real app by `npm run docs:screenshots` (see [Screenshots](#regenerating-screenshots)).
+
+### 1. Create an account
+
+![Sign up](docs/screenshots/register.png)
+
+Accounts are local: the username, email and an Argon2id password hash are stored in the app database on this computer. The language switcher in the top-right corner works before you sign in.
+
+### 2. Save the recovery code
+
+![Recovery code](docs/screenshots/recovery-code.png)
+
+Right after sign-up the app shows a one-time recovery code. It is the only way to reset a forgotten password, because there is no server to send an email from. Only its hash is stored.
+
+### 3. Sign in
+
+![Sign in](docs/screenshots/sign-in.png)
+
+Accounts that exist on this computer are listed for quick access. "Remember me" keeps you signed in with a random token encrypted by the operating system keychain (`safeStorage`). Repeated failed attempts are rate-limited.
+
+### 4. Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+The home page shows your level, total XP, solved exercises, streak and learning time. It also has a "Continue learning" card that opens the next unsolved exercise, today's daily challenge, a 30-day activity chart and recent achievements.
+
+### 5. Learning path
+
+![Learning path](docs/screenshots/learning-path.png)
+
+Five levels, from **SQL Beginner** to **Expert SQL**, each split into modules with progress bars. Every level ends with a level exam.
+
+### 6. Module: theory and exercises
+
+![Module](docs/screenshots/module.png)
+
+A module page combines the theory (Markdown with examples and tables) with the module's exercises and the final test. Solved exercises are marked, and "Continue" jumps to the first unsolved one.
+
+### 7. Solving an exercise
+
+![Solved exercise](docs/screenshots/exercise-solved.png)
+
+The task, theory, hints, schema and personal notes are on the left; the SQL editor and results are on the right. **Run** executes the query and shows the result. **Submit** grades it against the main scenario and hidden tests, then shows the explanation and the XP earned.
+
+### 8. Other exercise types
+
+![Explain the query](docs/screenshots/exercise-explain.png)
+
+Not every exercise is about writing SQL from scratch. This "explain the query" exercise asks you to pick what a query does. Other types include predicting the result, choosing the correct query, filling in blanks, assembling a query from fragments, fixing a bug and building a JOIN.
+
+### 9. Safety checks
+
+![Forbidden statement](docs/screenshots/exercise-guard.png)
+
+Queries are checked before they run. Each exercise defines which statements are allowed (by default only `SELECT`), so `DROP TABLE` is rejected with a clear message and never reaches a database.
+
+### 10. Exercise catalog
+
+![Exercise catalog](docs/screenshots/catalog.png)
+
+All 500 exercises in one searchable list with filters, sorting, favorites and per-exercise status.
+
+### 11. Practice
+
+![Practice](docs/screenshots/practice.png)
+
+The practice hub contains the daily challenge (three exercises picked for your level), a 5-minute speed round, a review of exercises you got wrong, level exams and capstone projects. Each project is a sequence of tasks on one database.
+
+### 12. Module test
+
+![Module test](docs/screenshots/module-test.png)
+
+A test draws 6 random exercises from the module. The numbered tabs at the top show which questions are answered correctly or incorrectly; hints and solutions are hidden during a test.
+
+### 13. Test result
+
+![Test result](docs/screenshots/module-test-result.png)
+
+70% correct answers pass the test and award bonus XP. Each question links back to its exercise for review.
+
+### 14. SQL Playground
+
+![Playground](docs/screenshots/playground.png)
+
+A free-form editor on any of the 6 training databases, with a schema browser and query history. Every user works on a private copy of the database that can be reset at any time, so data-changing statements are safe to try.
+
+### 15. Analytics
+
+![Analytics](docs/screenshots/analytics.png)
+
+Accuracy, average solving time, streaks, 90-day activity charts, progress by level and the topics that are your strengths or need practice.
+
+### 16. Achievements
+
+![Achievements](docs/screenshots/achievements.png)
+
+30 achievements in five groups (progress, mastery, habits, challenges and exploration), with progress bars for the ones still locked.
+
+### 17. Profile and settings
+
+![Profile](docs/screenshots/profile.png)
+
+Edit the username and email, change the password, generate a new recovery code or delete the account. Settings include the interface language, daily XP goal, editor preferences and reduced motion. The page also shows where the data is stored.
+
+### 18. Russian interface
+
+![Learning path in Russian](docs/screenshots/learning-path-ru.png)
+
+Switching the language updates the whole app immediately, including server-side messages and the curriculum. The choice is remembered across restarts.
+
+## Training content
+
+Exercise counts are verified automatically (`tests/integration/content.test.ts`) and printed by `npm run content:report`.
+
+| Level | Modules | Exercises |
+|-------|---------|-----------|
+| SQL Beginner | 11 | 120 |
+| SQL Fundamentals | 10 | 120 |
 | Intermediate SQL | 13 | 120 |
 | Advanced SQL | 13 | 100 |
 | Expert SQL | 8 | 40 |
-| **Всего** | **55** | **500** |
+| **Total** | **55** | **500** |
 
-Кроме того, в `data/curriculum.json` описаны 7 проектов: цепочки заданий на одной базе.
+`data/curriculum.json` also defines 7 capstone projects (sequences of exercises on a single database).
 
-Учебные базы (`data/datasets`): интернет-магазин, сотрудники компании, кинотеатр, продажи, банк, университет. У каждой базы есть файл `hidden.sql` — скрытый сценарий с дополнительными данными, на котором решение проверяется повторно.
+There are 6 training databases in `data/datasets`: an online store, a company's employees, movies, sales, a bank and a university. Each database has a `hidden.sql` file with extra data that forms the hidden test scenario, so a solution is graded on data the learner has never seen.
 
-## Требования
+## Requirements
 
-- Node.js 20 LTS или новее, npm 10+.
-- macOS, Windows или Linux.
+- Node.js 20 LTS or newer, npm 10+.
+- macOS, Windows or Linux.
 
-## Быстрый старт
+## Quick start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Откроется окно приложения. Создайте аккаунт — данные хранятся только на вашем компьютере.
+The app window opens. Create an account; all data stays on your computer.
 
-## Команды
+## Commands
 
-| Команда | Назначение |
-|---------|------------|
-| `npm run dev` | запуск в режиме разработки с горячей перезагрузкой |
-| `npm start` | запуск собранного приложения (`electron-vite preview`) |
-| `npm run typecheck` | проверка TypeScript (main/preload и renderer) |
-| `npm test` | модульные и интеграционные тесты (Vitest) |
-| `npm run test:content` | проверка всех 500 заданий реальным грейдером |
-| `npm run test:e2e` | сборка и E2E-тесты Electron (Playwright) |
-| `npm run content:report` | отчёт по количеству заданий, типам и ошибкам контента |
-| `npm run build` | typecheck + сборка + установщик для текущей ОС |
-| `npm run build:dir` | распакованная сборка без установщика (быстрая проверка) |
-| `npm run build:win` / `build:mac` / `build:linux` | установщики под конкретную ОС |
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Run in development mode with hot reload |
+| `npm start` | Run the built app (`electron-vite preview`) |
+| `npm run typecheck` | TypeScript checks for main/preload and renderer |
+| `npm test` | Unit and integration tests (Vitest) |
+| `npm run test:content` | Grade all 500 exercises with the real grader |
+| `npm run test:e2e` | Build and run Electron E2E tests (Playwright) |
+| `npm run docs:screenshots` | Build and regenerate the screenshots in `docs/screenshots` |
+| `npm run content:report` | Report exercise counts, types and content issues |
+| `npm run build` | Typecheck, build and create an installer for the current OS |
+| `npm run build:dir` | Unpacked build without an installer (quick check) |
+| `npm run build:win` / `build:mac` / `build:linux` | Installers for a specific OS |
 
-Готовые сборки появляются в `release/<версия>/`: NSIS-установщик для Windows, DMG и ZIP для macOS, AppImage и DEB для Linux. Собирать установщик для macOS нужно на macOS, для Windows лучше использовать Windows или CI.
+Builds are written to `release/<version>/`: an NSIS installer for Windows, DMG and ZIP for macOS, AppImage and DEB for Linux. Build the macOS installer on macOS; for Windows, use Windows or CI.
 
-## Архитектура
+### Regenerating screenshots
+
+`npm run docs:screenshots` launches the built app in a temporary data directory, registers a demo user, seeds progress through the regular IPC API and captures every page at 1440×900 into `docs/screenshots/`. The script lives in `scripts/screenshots/capture.spec.ts`.
+
+## Architecture
 
 ```
 src/
-  main/            процесс Electron Main
-    engine/        SQL-движок: guard, worker-поток, сравнение результатов
-    content/       загрузка и валидация заданий (Zod), сборка эталонных программ
-    services/      auth, каталог, проверка, прогресс, тесты, достижения, статистика
-    database/      схема Drizzle, миграции, атомарное сохранение базы
-    ipc/           типизированный диспетчер IPC
-    security/      хеширование паролей, rate limiting, хранение токена, hardening
-  preload/         минимальный мост contextBridge
-  renderer/        React-интерфейс (features/*, components/*, i18n)
-  shared/          типы, Zod-схемы и контракт IPC, общий для main и renderer
+  main/            Electron main process
+    engine/        SQL engine: guard, worker thread, result comparison
+    content/       exercise loading and validation (Zod), reference programs, translations
+    services/      auth, catalog, grading, progress, assessments, achievements, stats, locale
+    database/      Drizzle schema, migrations, atomic database persistence
+    i18n/          main-process message catalog (English and Russian)
+    ipc/           typed IPC dispatcher
+    security/      password hashing, rate limiting, token storage, hardening
+  preload/         minimal contextBridge API
+  renderer/        React UI (features/*, components/*, i18n)
+  shared/          types, Zod schemas and the IPC contract shared by main and renderer
 data/
-  curriculum.json  уровни, модули, проекты
-  theory/          теория модулей (Markdown)
-  exercises/       задания (JSON) по уровням
-  datasets/        схемы, данные и скрытые сценарии учебных баз
+  curriculum.json  levels, modules, projects
+  theory/          module theory (Markdown)
+  exercises/       exercises (JSON) by level
+  datasets/        schemas, data and hidden scenarios of the training databases
+  i18n/en/         English content overlays
 tests/
-  unit/            guard, сравнение результатов, прогрессия, пароли
-  integration/     полный поток приложения и проверка всего контента
-  e2e/             сценарии Playwright для собранного приложения
+  unit/            guard, result comparison, progression, passwords, messages, snippets
+  renderer/        interface dictionaries and plural rules
+  integration/     full application flow and validation of all content
+  e2e/             Playwright scenarios for the built app
+scripts/
+  screenshots/     documentation screenshot capture
 ```
 
-Стек: Electron 37, electron-vite, React 19, TypeScript, Tailwind CSS, shadcn/ui, Lucide, Framer Motion, Monaco Editor, TanStack Query, Zustand; SQLite (sql.js/WebAssembly) и Drizzle ORM; Zod; Vitest и Playwright.
+Stack: Electron 37, electron-vite, React 19, TypeScript, Tailwind CSS, shadcn/ui, Lucide, Framer Motion, Monaco Editor, TanStack Query, Zustand; SQLite (sql.js/WebAssembly) and Drizzle ORM; Zod; Vitest and Playwright.
 
-### Как проверяется решение
+### How an answer is graded
 
-1. Renderer отправляет **ответ** (SQL, выбранный вариант, значения пропусков и т. п.) и ID задания. Эталонное решение и номер правильного варианта в renderer не передаются — только по явному запросу «Показать решение», который отмечается в прогрессе.
-2. Main проверяет ответ статическим guard'ом: разрешённые типы команд для задания, запрет системных команд.
-3. Для каждого сценария (основной + скрытые) в отдельном worker-потоке создаётся **новая in-memory база** из схемы и данных. На ней выполняется ответ пользователя и эталон.
-4. Результаты сравниваются с учётом порядка строк (если в эталоне есть `ORDER BY`), точности чисел и, при необходимости, имён столбцов. Для заданий на изменение данных (`mode: "mutation"`) сравнивается результат проверочного запроса `check`.
+1. The renderer sends the **answer** (SQL, selected option, blank values and so on) and the exercise ID. Reference solutions and correct option numbers are never sent to the renderer, except on an explicit "Show solution" request, which is recorded in the progress.
+2. The main process runs a static guard: the statement types allowed for the exercise, plus a ban on system commands.
+3. For each scenario (main and hidden), a worker thread creates a **fresh in-memory database** from the schema and data, then runs both the user's answer and the reference.
+4. Results are compared with attention to row order (when the reference uses `ORDER BY`), numeric precision and, if required, column names. For data-changing exercises (`mode: "mutation"`) the result of a `check` query is compared instead.
 
-## Безопасность
+## Security
 
-- **Пароли** хешируются Argon2id (hash-wasm) со случайной солью; в базе хранится только хеш. Пароли и токены не хранятся в `localStorage`.
-- **Сессия «запомнить меня»** — случайный токен; в базе хранится его хеш, на диске — значение, зашифрованное через `safeStorage` ОС.
-- **Подбор пароля** ограничен: после нескольких неудачных попыток вход временно блокируется с растущей задержкой.
-- **Electron**: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, строгий Content-Security-Policy, запрет навигации, новых окон и запросов разрешений.
-- **IPC**: один канал с белым списком методов; каждый запрос валидируется Zod-схемой в main-процессе, ошибки возвращаются в едином формате. Renderer не имеет доступа к основной базе приложения.
-- **Пользовательский SQL** никогда не выполняется в базе приложения. Он выполняется только во временных изолированных базах в отдельном потоке.
-  - `ATTACH`, `DETACH`, `PRAGMA`, `VACUUM`, расширения и изменение системных таблиц `sqlite_*` запрещены всегда.
-  - В заданиях `DROP` и `ALTER` запрещены; разрешённые команды задаются для каждого задания (по умолчанию только `SELECT`).
-  - Ограничения: таймаут 4 с на запуск (8 с на полную проверку, после чего поток принудительно завершается), максимум 1000 строк результата, 25 команд и 20 000 символов.
-  - В Playground каждый пользователь работает со своей копией учебной базы, которую можно сбросить.
-- **Запросы к базе приложения** выполняются через Drizzle ORM с параметрами; вне ORM работают только фиксированные SQL-миграции.
+- **Passwords** are hashed with Argon2id (hash-wasm) using a random salt; only the hash is stored. Passwords and tokens are never kept in `localStorage`.
+- **"Remember me"** uses a random token: its hash is stored in the database and the value is encrypted on disk with the OS `safeStorage`.
+- **Brute force protection**: after several failed attempts, sign-in is temporarily blocked with an increasing delay.
+- **Electron**: `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, a strict Content Security Policy, and blocked navigation, new windows and permission requests.
+- **IPC**: a single channel with an allowlist of methods. Every request is validated with a Zod schema in the main process, and errors are returned in one format. The renderer has no access to the application database.
+- **User SQL** never runs against the application database. It runs only in temporary isolated databases in a separate thread.
+  - `ATTACH`, `DETACH`, `PRAGMA`, `VACUUM`, extensions and changes to `sqlite_*` system tables are always forbidden.
+  - `DROP` and `ALTER` are forbidden in exercises; the allowed statements are configured per exercise (only `SELECT` by default).
+  - Limits: 4 s per run (8 s for full grading, after which the worker is terminated), at most 1000 result rows, 25 statements and 20,000 characters.
+  - In the Playground every user works on a personal copy of the training database, which can be reset.
+- **Application database queries** go through Drizzle ORM with bound parameters; only fixed SQL migrations run outside the ORM.
 
-## Хранение данных
+## Data storage
 
-Все данные лежат в папке данных приложения; точный путь показан на странице «Профиль».
+All data lives in the app's data folder; the exact path is shown on the Profile page.
 
-- `sql-mastery.db` — пользователи, прогресс, попытки, достижения. Запись атомарная: временный файл, `fsync`, переименование. Перед миграцией схемы создаётся резервная копия.
-- `session.json` — зашифрованный токен «запомнить меня».
-- `content/exercises/` — ваши собственные задания (см. ниже).
+- `sql-mastery.db`: users, progress, attempts, achievements and the interface language. Writes are atomic (temporary file, `fsync`, rename), and a backup is made before schema migrations.
+- `session.json`: the encrypted "remember me" token.
+- `content/exercises/`: your own exercises (see below).
 
-## Добавление заданий
+## Localization
 
-Задания хранятся в JSON-файлах. Встроенные лежат в `data/exercises/<уровень>/`; свои можно положить в папку `content/exercises/` внутри папки данных приложения — они подхватятся при следующем запуске, прогресс по встроенным заданиям сохранится. Ошибки в файлах не ломают приложение: проблемные задания пропускаются, а причина выводится в журнал.
+The interface ships in **English** (default) and **Russian**. The language is an app-wide setting: it can be changed on the sign-in screen, in the sidebar or in Profile → Settings. It is stored in the app database and applies to every account on this computer.
 
-Формат файла:
+- **Interface strings** live in `src/renderer/i18n/en.ts` and `ru.ts`. Both dictionaries must have the same keys and placeholders, which a unit test enforces. Plurals use the `{n:one|other}` syntax (Russian uses `{n:one|few|many}`) and are resolved with `Intl.PluralRules`. Dates and numbers are formatted for the selected locale.
+- **Main-process messages** (guard errors, grading results, timeouts, test titles) live in `src/main/i18n/messages.ts`, so errors produced by the backend are shown in the selected language too.
+- **Content** is written in Russian and translated with overlay files in `data/i18n/<locale>/`. Any text without a translation falls back to the original:
+  - `curriculum.json`: titles and descriptions of levels, modules and projects.
+  - `datasets.json`: database descriptions and table descriptions.
+  - `exercises/<level>.json`: per exercise ID, any of `title`, `description`, `hints`, `explanation`, `theory` and `options` (the number of options must match the original).
+  - `theory/<module id>.md`: translated module theory.
+
+Overlays are validated at startup: translations for unknown IDs or with a wrong number of options are reported and skipped. The English overlay currently covers the whole curriculum, all databases, all achievements and the titles of all 500 exercises. The full exercise text and theory are translated for the "What is SQL" and "SELECT" modules; other exercises show their task text in Russian until translated.
+
+To add a language, add its code to `src/shared/constants/locale.ts`, create a renderer dictionary and a main-process message table, and optionally add `data/i18n/<code>/` overlays.
+
+## Adding exercises
+
+Exercises are stored in JSON files. Built-in ones are in `data/exercises/<level>/`. You can also put your own files into `content/exercises/` inside the app data folder; they are loaded on the next start, and progress on built-in exercises is preserved. Invalid files never break the app: problematic exercises are skipped and the reason is logged.
+
+File format:
 
 ```json
 {
@@ -130,34 +271,30 @@ tests/
     {
       "id": "my-orders-by-country",
       "type": "write_query",
-      "title": "Заказы по странам",
-      "description": "Выведите страну и число заказов её клиентов. Отсортируйте по числу заказов по убыванию, затем по стране.",
+      "title": "Orders by country",
+      "description": "Return each country and the number of orders placed by its customers. Sort by the number of orders descending, then by country.",
       "difficulty": "medium",
       "solution": "SELECT c.country, COUNT(*) AS orders FROM orders o JOIN customers c ON c.id = o.customer_id GROUP BY c.country ORDER BY orders DESC, c.country",
-      "hints": ["Соедините заказы с клиентами.", "Сгруппируйте по стране."],
-      "explanation": "GROUP BY по атрибуту из присоединённой таблицы."
+      "hints": ["Join orders with customers.", "Group by country."],
+      "explanation": "GROUP BY on a column of the joined table."
     }
   ]
 }
 ```
 
-Основные поля:
+Main fields:
 
-- Общие: `id` (уникальный, строчные латинские буквы, цифры и дефисы), `type`, `title`, `description`, `difficulty` (`easy`, `medium`, `hard`, `expert`), `hints` (1–5), `explanation`. Необязательные: `xp`, `minutes`, `tags`, `module`, `dataset`.
-- Задания с SQL (`write_query`, `fix_bug`, `business_case`, `challenge`): `solution`, необязательные `alt` (альтернативные эталоны), `starter` (обязателен для `fix_bug`), `orderMatters`, `columnNames`, `hidden` (свои скрытые сценарии `{ "name", "setup" }`), `mode: "mutation"` вместе с `check` и `allow` для заданий на изменение данных.
-- `predict_result`: `sql`, `ask` (`value` или `rowCount`), необязательные `options`.
-- `choose_query`: `options` (SQL-варианты), `correct`.
-- `fill_blank`: `template` с пропусками `{{1}}`, `answers`, необязательные `choices`.
+- Common: `id` (unique; lowercase Latin letters, digits and hyphens), `type`, `title`, `description`, `difficulty` (`easy`, `medium`, `hard`, `expert`), `hints` (1–5), `explanation`. Optional: `xp`, `minutes`, `tags`, `module`, `dataset`.
+- SQL exercises (`write_query`, `fix_bug`, `business_case`, `challenge`): `solution`; optional `alt` (alternative references), `starter` (required for `fix_bug`), `orderMatters`, `columnNames`, `hidden` (custom hidden scenarios `{ "name", "setup" }`), and `mode: "mutation"` together with `check` and `allow` for data-changing exercises.
+- `predict_result`: `sql`, `ask` (`value` or `rowCount`), optional `options`.
+- `choose_query`: `options` (SQL variants), `correct`.
+- `fill_blank`: `template` with `{{1}}` blanks, `answers`, optional `choices`.
 - `join_builder`: `tables`, `select`, `suffix`, `answer`.
-- `order_parts`: `parts` (в правильном порядке), `distractors`.
-- `explain_query`: `sql`, `options` (текстовые), `correct`.
+- `order_parts`: `parts` (in the correct order), `distractors`.
+- `explain_query`: `sql`, `options` (text), `correct`.
 
-Модули перечислены в `data/curriculum.json`, теория модуля — `data/theory/<id модуля>.md`. После изменения встроенного контента запустите `npm run test:content`: тест выполнит каждый эталон на всех сценариях. Он также проверит, что неверные варианты, стартовый код `fix_bug` и пустое действие в задачах на изменение данных отклоняются.
+Modules are listed in `data/curriculum.json`, and module theory is in `data/theory/<module id>.md`. After changing built-in content, run `npm run test:content`. It runs every reference solution on all scenarios and checks that wrong options, `fix_bug` starters and empty actions in data-changing exercises are rejected.
 
-## Локализация
+## License
 
-Интерфейс на русском. Все строки вынесены в словари `src/renderer/i18n`: `ru.ts` — полный, `en.ts` — английский, недостающие ключи которого берутся из русского. Язык хранится в настройках пользователя (`locale`). Чтобы включить английский интерфейс, достаточно дополнить `en.ts` и добавить переключатель, вызывающий обновление настроек.
-
-## Лицензия
-
-Учебный проект. Все учебные данные вымышлены.
+Educational project. All training data is fictional.

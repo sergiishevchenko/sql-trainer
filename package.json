@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "test:content": "vitest run tests/integration/content.test.ts",
     "test:e2e": "electron-vite build && playwright test",
+    "docs:screenshots": "electron-vite build && playwright test -c playwright.screenshots.config.ts",
     "db:generate": "drizzle-kit generate",
     "content:report": "vite-node --config vitest.config.ts scripts/content-report.ts"
   },
