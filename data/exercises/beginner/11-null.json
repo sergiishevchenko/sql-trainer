@@ -1,0 +1,140 @@
+{
+  "module": "beginner.null",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-null-01",
+      "type": "write_query",
+      "title": "Клиенты без email",
+      "description": "Выведите `id`, имя и фамилию клиентов, у которых не указан email.",
+      "difficulty": "easy",
+      "solution": "SELECT id, first_name, last_name FROM customers WHERE email IS NULL",
+      "hints": ["Проверка на NULL делается через `IS NULL`, а не `= NULL`."],
+      "explanation": "Сравнение с NULL через `=` всегда даёт «неизвестно», поэтому нужен `IS NULL`."
+    },
+    {
+      "id": "b-null-02",
+      "type": "write_query",
+      "title": "Товары с брендом",
+      "description": "Выведите название и бренд товаров, у которых бренд указан.",
+      "difficulty": "easy",
+      "solution": "SELECT name, brand FROM products WHERE brand IS NOT NULL",
+      "hints": ["Противоположность `IS NULL` — `IS NOT NULL`."],
+      "explanation": "`IS NOT NULL` отбирает строки с заполненным значением."
+    },
+    {
+      "id": "b-null-03",
+      "type": "write_query",
+      "title": "Действующие проекты",
+      "description": "Выведите названия и даты начала проектов, у которых нет даты окончания (`end_date`).",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT name, start_date FROM projects WHERE end_date IS NULL",
+      "hints": ["Незавершённые проекты не имеют `end_date`."],
+      "explanation": "Отсутствие даты окончания хранится как NULL."
+    },
+    {
+      "id": "b-null-04",
+      "type": "write_query",
+      "title": "Подстановка значения",
+      "description": "Выведите имя клиента и email. Если email не указан, выведите вместо него текст `нет email`. Назовите столбец `contact`.",
+      "difficulty": "medium",
+      "solution": "SELECT first_name, COALESCE(email, 'нет email') AS contact FROM customers",
+      "alt": ["SELECT first_name, IFNULL(email, 'нет email') AS contact FROM customers"],
+      "hints": ["`COALESCE(a, b)` возвращает первый аргумент, который не равен NULL."],
+      "explanation": "`COALESCE` подставляет значение по умолчанию вместо NULL."
+    },
+    {
+      "id": "b-null-05",
+      "type": "write_query",
+      "title": "Без кассовых сборов",
+      "description": "Выведите названия фильмов, для которых неизвестны кассовые сборы (`box_office_musd`).",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title FROM movies WHERE box_office_musd IS NULL",
+      "hints": ["Неизвестное значение — это NULL."],
+      "explanation": "Фильмы без данных о сборах хранят NULL в столбце `box_office_musd`."
+    },
+    {
+      "id": "b-null-06",
+      "type": "write_query",
+      "title": "Сборы или ноль",
+      "description": "Выведите название фильма и сборы, заменив неизвестные сборы на 0. Назовите столбец `box_office`. Отсортируйте по `box_office` по убыванию, затем по названию.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT title, COALESCE(box_office_musd, 0) AS box_office FROM movies ORDER BY box_office DESC, title",
+      "alt": ["SELECT title, IFNULL(box_office_musd, 0) AS box_office FROM movies ORDER BY box_office DESC, title"],
+      "hints": ["Используйте `COALESCE` и сортировку по псевдониму."],
+      "explanation": "После замены NULL на 0 такие фильмы окажутся в конце сортировки по убыванию."
+    },
+    {
+      "id": "b-null-07",
+      "type": "fix_bug",
+      "title": "Сравнение с NULL",
+      "description": "Запрос должен найти сотрудников без руководителя, но всегда возвращает пустой результат.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "starter": "SELECT first_name, last_name\nFROM employees\nWHERE manager_id = NULL;",
+      "solution": "SELECT first_name, last_name FROM employees WHERE manager_id IS NULL",
+      "hints": ["`= NULL` никогда не бывает истинным."],
+      "explanation": "Любое сравнение с NULL через `=` даёт NULL (неизвестно), и строка отбрасывается."
+    },
+    {
+      "id": "b-null-08",
+      "type": "predict_result",
+      "title": "NOT IN и пропуски",
+      "description": "У клиента без города `city` равен NULL. Сколько строк вернёт запрос?",
+      "difficulty": "hard",
+      "sql": "SELECT id FROM customers\nWHERE city <> 'Moscow';",
+      "ask": "rowCount",
+      "hints": ["Строка с `city = NULL` не пройдёт условие `<>`.", "Посчитайте клиентов не из Москвы и с известным городом."],
+      "explanation": "`NULL <> 'Moscow'` даёт NULL, а не истину, поэтому клиент без города не попадает в результат."
+    },
+    {
+      "id": "b-null-09",
+      "type": "choose_query",
+      "title": "Все, кроме Лондона",
+      "description": "Какой запрос выведет всех клиентов, кроме живущих в Лондоне, **включая** клиентов с неизвестным городом?",
+      "difficulty": "hard",
+      "options": [
+        "SELECT id, city FROM customers WHERE city <> 'London' OR city IS NULL",
+        "SELECT id, city FROM customers WHERE city <> 'London'",
+        "SELECT id, city FROM customers WHERE NOT city = 'London'",
+        "SELECT id, city FROM customers WHERE city IS NOT NULL"
+      ],
+      "correct": 0,
+      "hints": ["Строки с NULL нужно добавить явно."],
+      "explanation": "Из-за трёхзначной логики `city <> 'London'` отбрасывает NULL. Условие `OR city IS NULL` возвращает их обратно."
+    },
+    {
+      "id": "b-null-10",
+      "type": "explain_query",
+      "title": "Арифметика с NULL",
+      "description": "Что будет в столбце `total` для товара, у которого `price = 50`, а `stock` равен NULL?",
+      "difficulty": "medium",
+      "sql": "SELECT name, price * stock AS total FROM products;",
+      "options": [
+        "NULL — любая арифметика с NULL даёт NULL",
+        "0 — NULL трактуется как ноль",
+        "50 — NULL игнорируется",
+        "Запрос завершится ошибкой"
+      ],
+      "correct": 0,
+      "hints": ["NULL означает «неизвестное значение»."],
+      "explanation": "Если один из операндов неизвестен, результат тоже неизвестен. Чтобы получить 0, используйте `COALESCE(stock, 0)`."
+    },
+    {
+      "id": "b-null-11",
+      "type": "fill_blank",
+      "title": "Открытые счета",
+      "description": "Выведите `id`, тип и баланс счетов, которые не закрыты (`closed_at` не заполнен).",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "template": "SELECT id, account_type, balance\nFROM accounts\nWHERE closed_at {{1}};",
+      "answers": ["IS NULL"],
+      "choices": [["IS NULL", "= NULL", "IS NOT NULL", "= ''"]],
+      "hints": ["Незакрытый счёт не имеет даты закрытия."],
+      "explanation": "Только `IS NULL` корректно проверяет отсутствие значения."
+    }
+  ]
+}

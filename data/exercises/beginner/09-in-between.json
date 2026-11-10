@@ -1,0 +1,136 @@
+{
+  "module": "beginner.in-between",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-inbetween-01",
+      "type": "write_query",
+      "title": "Товары нескольких брендов",
+      "description": "Выведите название и бренд товаров брендов `Apple`, `Sony` и `JBL`.",
+      "difficulty": "easy",
+      "solution": "SELECT name, brand FROM products WHERE brand IN ('Apple', 'Sony', 'JBL')",
+      "alt": ["SELECT name, brand FROM products WHERE brand = 'Apple' OR brand = 'Sony' OR brand = 'JBL'"],
+      "hints": ["`IN (…)` заменяет цепочку условий через `OR`."],
+      "explanation": "`brand IN ('Apple', 'Sony', 'JBL')` истинно, если бренд совпадает с любым значением из списка."
+    },
+    {
+      "id": "b-inbetween-02",
+      "type": "write_query",
+      "title": "Средний ценовой сегмент",
+      "description": "Выведите название и цену товаров с ценой от 100 до 500 включительно.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products WHERE price BETWEEN 100 AND 500",
+      "alt": ["SELECT name, price FROM products WHERE price >= 100 AND price <= 500"],
+      "hints": ["`BETWEEN a AND b` включает обе границы."],
+      "explanation": "`BETWEEN 100 AND 500` — то же самое, что `price >= 100 AND price <= 500`."
+    },
+    {
+      "id": "b-inbetween-03",
+      "type": "write_query",
+      "title": "Заказы за квартал",
+      "description": "Выведите `id` и `order_date` заказов, сделанных с 1 января по 31 марта 2024 года включительно.",
+      "difficulty": "easy",
+      "solution": "SELECT id, order_date FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-03-31'",
+      "alt": ["SELECT id, order_date FROM orders WHERE order_date >= '2024-01-01' AND order_date <= '2024-03-31'"],
+      "hints": ["Даты в формате `YYYY-MM-DD` можно использовать с `BETWEEN`."],
+      "explanation": "Даты хранятся строками ISO-формата, поэтому диапазон строк совпадает с диапазоном дат."
+    },
+    {
+      "id": "b-inbetween-04",
+      "type": "write_query",
+      "title": "Не в Европе",
+      "description": "Выведите имя и страну клиентов, страна которых **не** входит в список: `France`, `Germany`, `Spain`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, country FROM customers WHERE country NOT IN ('France', 'Germany', 'Spain')",
+      "hints": ["Используйте `NOT IN`."],
+      "explanation": "`NOT IN` отбирает строки, значение которых не совпадает ни с одним элементом списка."
+    },
+    {
+      "id": "b-inbetween-05",
+      "type": "write_query",
+      "title": "Фильмы 90-х",
+      "description": "Выведите название и год фильмов, вышедших с 1990 по 1999 год, отсортированные по году, затем по названию.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, release_year FROM movies WHERE release_year BETWEEN 1990 AND 1999 ORDER BY release_year, title",
+      "hints": ["`BETWEEN 1990 AND 1999`, затем `ORDER BY`."],
+      "explanation": "Обе границы входят в диапазон, поэтому фильмы 1990 и 1999 года тоже попадут в результат."
+    },
+    {
+      "id": "b-inbetween-06",
+      "type": "write_query",
+      "title": "Отделы по списку",
+      "description": "Выведите имя, фамилию и `department_id` сотрудников из отделов 2, 3 и 6.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, last_name, department_id FROM employees WHERE department_id IN (2, 3, 6)",
+      "hints": ["Числа в списке `IN` пишутся без кавычек."],
+      "explanation": "`IN` работает с числами так же, как со строками."
+    },
+    {
+      "id": "b-inbetween-07",
+      "type": "write_query",
+      "title": "Оценки вне диапазона",
+      "description": "Выведите `student_id`, `course_id` и `grade` записей, где оценка **не** попадает в диапазон от 60 до 90 (записи без оценки не нужны).",
+      "difficulty": "medium",
+      "dataset": "university",
+      "solution": "SELECT student_id, course_id, grade FROM enrollments WHERE grade NOT BETWEEN 60 AND 90",
+      "alt": ["SELECT student_id, course_id, grade FROM enrollments WHERE grade < 60 OR grade > 90"],
+      "hints": ["`NOT BETWEEN` — противоположность `BETWEEN`.", "NULL не проходит ни `BETWEEN`, ни `NOT BETWEEN`."],
+      "explanation": "Для NULL результат сравнения неизвестен, поэтому записи без оценки отбрасываются автоматически."
+    },
+    {
+      "id": "b-inbetween-08",
+      "type": "fix_bug",
+      "title": "Перевёрнутый диапазон",
+      "description": "Запрос должен найти товары с ценой от 50 до 150, но возвращает пустой результат.",
+      "difficulty": "easy",
+      "starter": "SELECT name, price\nFROM products\nWHERE price BETWEEN 150 AND 50;",
+      "solution": "SELECT name, price FROM products WHERE price BETWEEN 50 AND 150",
+      "hints": ["Первой в `BETWEEN` указывается меньшая граница."],
+      "explanation": "`BETWEEN 150 AND 50` означает `price >= 150 AND price <= 50` — таких чисел не бывает."
+    },
+    {
+      "id": "b-inbetween-09",
+      "type": "predict_result",
+      "title": "Сколько транзакций",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "sql": "SELECT id FROM transactions\nWHERE tx_type IN ('fee', 'interest');",
+      "ask": "rowCount",
+      "hints": ["Сложите количество комиссий и начислений процентов."],
+      "explanation": "`IN` объединяет строки обоих типов транзакций."
+    },
+    {
+      "id": "b-inbetween-10",
+      "type": "choose_query",
+      "title": "Ловушка с датой и временем",
+      "description": "Даты транзакций содержат время (`2024-01-31 23:59`). Какой запрос вернёт **все** транзакции за январь 2024?",
+      "difficulty": "hard",
+      "dataset": "banking",
+      "options": [
+        "SELECT id, tx_date FROM transactions WHERE tx_date >= '2024-01-01' AND tx_date < '2024-02-01'",
+        "SELECT id, tx_date FROM transactions WHERE tx_date BETWEEN '2024-01-01' AND '2024-01-31'",
+        "SELECT id, tx_date FROM transactions WHERE tx_date IN ('2024-01')",
+        "SELECT id, tx_date FROM transactions WHERE tx_date = '2024-01'"
+      ],
+      "correct": 0,
+      "hints": ["Строка `'2024-01-31 23:59'` больше строки `'2024-01-31'`."],
+      "explanation": "Для дат со временем надёжнее полуоткрытый интервал `>= начало AND < начало следующего периода`."
+    },
+    {
+      "id": "b-inbetween-11",
+      "type": "fill_blank",
+      "title": "Сегменты клиентов банка",
+      "description": "Выведите клиентов сегментов `premium` и `business`, которые присоединились к банку в 2020–2022 годах.",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "template": "SELECT full_name, segment, joined_at\nFROM clients\nWHERE segment {{1}} ('premium', 'business')\n  AND joined_at {{2}} '2020-01-01' AND '2022-12-31';",
+      "answers": ["IN", "BETWEEN"],
+      "choices": [["IN", "=", "LIKE", "BETWEEN"], ["BETWEEN", "IN", "="]],
+      "hints": ["Список значений — `IN`, диапазон — `BETWEEN`."],
+      "explanation": "`IN` проверяет вхождение в список, `BETWEEN` — в диапазон."
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "module": "beginner.limit",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-limit-01",
+      "type": "write_query",
+      "title": "Топ-5 дорогих товаров",
+      "description": "Выведите название и цену 5 самых дорогих товаров (при равной цене — по названию).",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products ORDER BY price DESC, name LIMIT 5",
+      "hints": ["Сначала отсортируйте, затем ограничьте количество строк."],
+      "explanation": "`LIMIT 5` берёт первые 5 строк уже отсортированного результата."
+    },
+    {
+      "id": "b-limit-02",
+      "type": "write_query",
+      "title": "Три первых клиента",
+      "description": "Выведите `id`, имя и дату регистрации трёх клиентов, которые зарегистрировались раньше всех (при совпадении даты — по `id`).",
+      "difficulty": "easy",
+      "solution": "SELECT id, first_name, registered_at FROM customers ORDER BY registered_at, id LIMIT 3",
+      "hints": ["Самые ранние даты идут первыми при сортировке по возрастанию."],
+      "explanation": "Сортировка по возрастанию даты + `LIMIT 3` даёт трёх самых «старых» клиентов."
+    },
+    {
+      "id": "b-limit-03",
+      "type": "write_query",
+      "title": "Самый длинный фильм",
+      "description": "Выведите название и длительность самого длинного фильма (если таких несколько — первый по названию).",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, duration_min FROM movies ORDER BY duration_min DESC, title LIMIT 1",
+      "hints": ["`LIMIT 1` оставляет одну строку."],
+      "explanation": "Сочетание `ORDER BY … DESC LIMIT 1` — классический способ найти максимум вместе с остальными полями строки."
+    },
+    {
+      "id": "b-limit-04",
+      "type": "write_query",
+      "title": "Вторая страница",
+      "description": "Товары выводятся страницами по 5 штук в алфавитном порядке названий. Выведите названия товаров на **второй** странице.",
+      "difficulty": "medium",
+      "solution": "SELECT name FROM products ORDER BY name LIMIT 5 OFFSET 5",
+      "alt": ["SELECT name FROM products ORDER BY name LIMIT 5, 5"],
+      "hints": ["`OFFSET` пропускает указанное количество строк.", "Вторая страница начинается после первых 5 строк."],
+      "explanation": "Страница N при размере страницы K: `LIMIT K OFFSET (N - 1) * K`."
+    },
+    {
+      "id": "b-limit-05",
+      "type": "write_query",
+      "title": "Три последних заказа",
+      "description": "Выведите `id`, `order_date` и `status` трёх самых свежих заказов (при одинаковой дате — больший `id` раньше).",
+      "difficulty": "easy",
+      "solution": "SELECT id, order_date, status FROM orders ORDER BY order_date DESC, id DESC LIMIT 3",
+      "hints": ["Отсортируйте по дате по убыванию."],
+      "explanation": "Свежие записи — с наибольшей датой, поэтому сортируем по убыванию и берём первые 3."
+    },
+    {
+      "id": "b-limit-06",
+      "type": "write_query",
+      "title": "Самые низкооплачиваемые",
+      "description": "Выведите имя, фамилию и зарплату 4 сотрудников с самой низкой зарплатой (при равенстве — по `id`).",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, last_name, salary FROM employees ORDER BY salary, id LIMIT 4",
+      "hints": ["Сортировка по возрастанию + `LIMIT`."],
+      "explanation": "Тай-брейкер `id` делает результат детерминированным при одинаковых зарплатах."
+    },
+    {
+      "id": "b-limit-07",
+      "type": "fix_bug",
+      "title": "LIMIT не на месте",
+      "description": "Запрос должен вывести 3 самых дорогих товара, но выдаёт ошибку.",
+      "difficulty": "easy",
+      "starter": "SELECT name, price\nFROM products\nLIMIT 3\nORDER BY price DESC, name;",
+      "solution": "SELECT name, price FROM products ORDER BY price DESC, name LIMIT 3",
+      "hints": ["`LIMIT` — самая последняя часть запроса."],
+      "explanation": "`LIMIT` всегда пишется после `ORDER BY`."
+    },
+    {
+      "id": "b-limit-08",
+      "type": "predict_result",
+      "title": "Сколько строк после OFFSET",
+      "description": "В таблице `departments` 8 строк. Сколько строк вернёт запрос?",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "sql": "SELECT name FROM departments ORDER BY id LIMIT 5 OFFSET 6;",
+      "ask": "rowCount",
+      "options": ["5", "2", "0", "6"],
+      "hints": ["После пропуска 6 строк остаётся только 2."],
+      "explanation": "`OFFSET 6` пропускает 6 строк из 8, а `LIMIT 5` разрешает взять до 5 — но осталось только 2."
+    },
+    {
+      "id": "b-limit-09",
+      "type": "predict_result",
+      "title": "Значение на третьем месте",
+      "description": "Какое значение `price` вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT price FROM products ORDER BY price DESC LIMIT 1 OFFSET 2;",
+      "ask": "value",
+      "hints": ["Найдите третью по величине цену с учётом повторов."],
+      "explanation": "`OFFSET 2` пропускает две самые высокие цены, `LIMIT 1` берёт следующую."
+    },
+    {
+      "id": "b-limit-10",
+      "type": "choose_query",
+      "title": "Самый молодой студент",
+      "description": "Какой запрос вернёт имя самого молодого студента?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT full_name FROM students ORDER BY birth_date DESC, id LIMIT 1",
+        "SELECT full_name FROM students ORDER BY birth_date, id LIMIT 1",
+        "SELECT full_name FROM students LIMIT 1",
+        "SELECT full_name FROM students ORDER BY enrollment_year DESC, id LIMIT 1"
+      ],
+      "correct": 0,
+      "hints": ["Самый молодой родился позже всех."],
+      "explanation": "Чем позже дата рождения, тем младше человек, поэтому сортируем по убыванию `birth_date`."
+    },
+    {
+      "id": "b-limit-11",
+      "type": "fill_blank",
+      "title": "Топ кассовых сборов",
+      "description": "Выведите 3 фильма с самыми большими кассовыми сборами.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "template": "SELECT title, box_office_musd\nFROM movies\nORDER BY box_office_musd {{1}}, title\n{{2}} 3;",
+      "answers": ["DESC", "LIMIT"],
+      "choices": [["DESC", "ASC"], ["LIMIT", "TOP", "OFFSET", "FETCH"]],
+      "hints": ["В SQLite нет `TOP`, используется `LIMIT`."],
+      "explanation": "`TOP` — синтаксис SQL Server. В SQLite, PostgreSQL и MySQL используется `LIMIT`."
+    }
+  ]
+}

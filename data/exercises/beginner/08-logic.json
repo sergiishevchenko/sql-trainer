@@ -1,0 +1,142 @@
+{
+  "module": "beginner.logic",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-logic-01",
+      "type": "write_query",
+      "title": "Дорогие и в наличии",
+      "description": "Выведите название, цену и остаток товаров дороже 300, которые есть на складе (`stock > 0`).",
+      "difficulty": "easy",
+      "solution": "SELECT name, price, stock FROM products WHERE price > 300 AND stock > 0",
+      "hints": ["Оба условия должны выполняться одновременно — используйте `AND`."],
+      "explanation": "`AND` возвращает истину, только если истинны оба условия."
+    },
+    {
+      "id": "b-logic-02",
+      "type": "write_query",
+      "title": "Париж или Берлин",
+      "description": "Выведите имя, фамилию и город клиентов из Парижа или Берлина.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, last_name, city FROM customers WHERE city = 'Paris' OR city = 'Berlin'",
+      "alt": ["SELECT first_name, last_name, city FROM customers WHERE city IN ('Paris', 'Berlin')"],
+      "hints": ["Достаточно выполнения любого из условий — используйте `OR`."],
+      "explanation": "`OR` истинно, если истинно хотя бы одно условие."
+    },
+    {
+      "id": "b-logic-03",
+      "type": "write_query",
+      "title": "Кроме доставленных",
+      "description": "Выведите `id` и `status` всех заказов, которые **не** находятся в статусе `delivered`.",
+      "difficulty": "easy",
+      "solution": "SELECT id, status FROM orders WHERE NOT status = 'delivered'",
+      "alt": ["SELECT id, status FROM orders WHERE status <> 'delivered'", "SELECT id, status FROM orders WHERE status != 'delivered'"],
+      "hints": ["Можно использовать `NOT` или оператор `<>`."],
+      "explanation": "`NOT условие` инвертирует результат условия."
+    },
+    {
+      "id": "b-logic-04",
+      "type": "write_query",
+      "title": "Приоритет операторов",
+      "description": "Выведите названия и цены товаров брендов `Apple` или `Samsung`, которые дороже 500.",
+      "difficulty": "medium",
+      "solution": "SELECT name, price FROM products WHERE (brand = 'Apple' OR brand = 'Samsung') AND price > 500",
+      "alt": ["SELECT name, price FROM products WHERE brand IN ('Apple', 'Samsung') AND price > 500"],
+      "hints": ["`AND` выполняется раньше `OR`.", "Сгруппируйте условия на бренд скобками."],
+      "explanation": "Без скобок условие прочиталось бы как `brand = 'Apple' OR (brand = 'Samsung' AND price > 500)`."
+    },
+    {
+      "id": "b-logic-05",
+      "type": "write_query",
+      "title": "Женщины-инженеры",
+      "description": "Выведите имя, фамилию и должность сотрудниц (`gender = 'F'`) из отдела с `department_id = 1`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, last_name, job_title FROM employees WHERE gender = 'F' AND department_id = 1",
+      "hints": ["Два условия через `AND`."],
+      "explanation": "Обе проверки должны выполняться для каждой строки результата."
+    },
+    {
+      "id": "b-logic-06",
+      "type": "write_query",
+      "title": "Хиты или классика",
+      "description": "Выведите название, год и рейтинг фильмов, у которых рейтинг не ниже 8.5 **или** которые вышли до 2000 года.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, release_year, rating FROM movies WHERE rating >= 8.5 OR release_year < 2000",
+      "hints": ["Подойдёт любое из двух условий."],
+      "explanation": "Фильм попадает в результат, если выполнено хотя бы одно условие."
+    },
+    {
+      "id": "b-logic-07",
+      "type": "fix_bug",
+      "title": "Лишние строки",
+      "description": "Нужны клиенты из Великобритании или Германии, которые являются VIP (`is_vip = 1`). Запрос возвращает лишних клиентов. Исправьте его.",
+      "difficulty": "medium",
+      "starter": "SELECT first_name, country, is_vip\nFROM customers\nWHERE country = 'UK' OR country = 'Germany' AND is_vip = 1;",
+      "solution": "SELECT first_name, country, is_vip FROM customers WHERE (country = 'UK' OR country = 'Germany') AND is_vip = 1",
+      "alt": ["SELECT first_name, country, is_vip FROM customers WHERE country IN ('UK', 'Germany') AND is_vip = 1"],
+      "hints": ["Проверьте, в каком порядке выполняются `AND` и `OR`."],
+      "explanation": "`AND` связывает сильнее, чем `OR`, поэтому без скобок проверка VIP применялась только к Германии."
+    },
+    {
+      "id": "b-logic-08",
+      "type": "predict_result",
+      "title": "Подсчёт по условиям",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT id FROM departments\nWHERE location = 'London' OR location = 'Zurich' AND budget > 320000;",
+      "ask": "rowCount",
+      "hints": ["Сначала вычисляется `AND`, затем `OR`.", "Посмотрите на бюджеты отделов в Лондоне и Цюрихе."],
+      "explanation": "Условие читается как `location = 'London' OR (location = 'Zurich' AND budget > 320000)`."
+    },
+    {
+      "id": "b-logic-09",
+      "type": "choose_query",
+      "title": "Активные кредиты на большие суммы",
+      "description": "Какой запрос выведет кредиты в статусе `active` или `overdue` на сумму больше 20 000?",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "options": [
+        "SELECT id, amount, status FROM loans WHERE (status = 'active' OR status = 'overdue') AND amount > 20000",
+        "SELECT id, amount, status FROM loans WHERE status = 'active' OR status = 'overdue' AND amount > 20000",
+        "SELECT id, amount, status FROM loans WHERE status = 'active' AND status = 'overdue' AND amount > 20000",
+        "SELECT id, amount, status FROM loans WHERE NOT status = 'closed' OR amount > 20000"
+      ],
+      "correct": 0,
+      "hints": ["Статус не может одновременно быть двумя значениями.", "Не забудьте про приоритет `AND`."],
+      "explanation": "Скобки гарантируют, что ограничение на сумму применяется к обоим статусам."
+    },
+    {
+      "id": "b-logic-10",
+      "type": "explain_query",
+      "title": "NOT и скобки",
+      "description": "Какие товары вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT name FROM products\nWHERE NOT (price < 100 OR stock = 0);",
+      "options": [
+        "Товары, которые стоят не меньше 100 и есть на складе",
+        "Товары дешевле 100 или отсутствующие на складе",
+        "Товары, которые стоят не меньше 100 или есть на складе",
+        "Только товары с нулевым остатком"
+      ],
+      "correct": 0,
+      "hints": ["По закону де Моргана `NOT (A OR B)` = `NOT A AND NOT B`."],
+      "explanation": "`NOT (price < 100 OR stock = 0)` эквивалентно `price >= 100 AND stock <> 0`."
+    },
+    {
+      "id": "b-logic-11",
+      "type": "fill_blank",
+      "title": "Мужчины с высокой зарплатой",
+      "description": "Выведите сотрудников-мужчин (`gender = 'M'`) с зарплатой больше 100 000 или любых сотрудников с должностью `CEO`.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "template": "SELECT first_name, job_title, salary\nFROM employees\nWHERE {{1}}gender = 'M' {{2}} salary > 100000) {{3}} job_title = 'CEO';",
+      "answers": ["(", "AND", "OR"],
+      "choices": [["(", "NOT ("], ["AND", "OR"], ["OR", "AND"]],
+      "hints": ["Первое условие состоит из двух частей, которые должны выполняться вместе."],
+      "explanation": "Скобки объединяют две проверки в одно условие, а `OR` добавляет к нему CEO."
+    }
+  ]
+}

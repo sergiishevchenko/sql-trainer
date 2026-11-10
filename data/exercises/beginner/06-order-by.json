@@ -1,0 +1,141 @@
+{
+  "module": "beginner.order-by",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-order-01",
+      "type": "write_query",
+      "title": "Товары по цене",
+      "description": "Выведите название и цену всех товаров, отсортировав их по цене от дешёвых к дорогим. При равной цене упорядочьте по названию.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products ORDER BY price, name",
+      "alt": ["SELECT name, price FROM products ORDER BY price ASC, name ASC"],
+      "hints": ["По умолчанию сортировка идёт по возрастанию (`ASC`).", "Второй столбец сортировки указывается через запятую."],
+      "explanation": "`ORDER BY price, name` сначала сортирует по цене, а при равенстве цен — по названию."
+    },
+    {
+      "id": "b-order-02",
+      "type": "write_query",
+      "title": "Самые высокие зарплаты",
+      "description": "Выведите имя, фамилию и зарплату сотрудников от самой высокой зарплаты к самой низкой. При равной зарплате — по `id`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, last_name, salary FROM employees ORDER BY salary DESC, id",
+      "hints": ["Для убывания используется `DESC`."],
+      "explanation": "`DESC` относится только к столбцу, после которого стоит. `id` сортируется по возрастанию."
+    },
+    {
+      "id": "b-order-03",
+      "type": "write_query",
+      "title": "Новые фильмы",
+      "description": "Выведите название и год выпуска фильмов, сначала самые новые. Фильмы одного года — по названию.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, release_year FROM movies ORDER BY release_year DESC, title",
+      "hints": ["Сортируйте по `release_year DESC`, затем по `title`."],
+      "explanation": "Направление сортировки задаётся для каждого столбца отдельно."
+    },
+    {
+      "id": "b-order-04",
+      "type": "write_query",
+      "title": "Клиенты по городам",
+      "description": "Выведите `city`, `last_name` и `first_name` клиентов, отсортированных по городу, затем по фамилии, затем по имени.",
+      "difficulty": "easy",
+      "solution": "SELECT city, last_name, first_name FROM customers ORDER BY city, last_name, first_name",
+      "hints": ["Перечислите три столбца в `ORDER BY` через запятую."],
+      "explanation": "Каждый следующий столбец сортировки используется, только когда предыдущие совпадают. Строки с `NULL` в `city` в SQLite идут первыми."
+    },
+    {
+      "id": "b-order-05",
+      "type": "write_query",
+      "title": "Сортировка по выражению",
+      "description": "Выведите название товара и стоимость всего запаса (`price * stock`) под именем `stock_value`. Отсортируйте по `stock_value` по убыванию, при равенстве — по названию.",
+      "difficulty": "medium",
+      "solution": "SELECT name, price * stock AS stock_value FROM products ORDER BY stock_value DESC, name",
+      "alt": ["SELECT name, price * stock AS stock_value FROM products ORDER BY price * stock DESC, name"],
+      "hints": ["В `ORDER BY` можно использовать псевдоним столбца из `SELECT`."],
+      "explanation": "`ORDER BY` выполняется после `SELECT`, поэтому псевдоним `stock_value` там уже доступен."
+    },
+    {
+      "id": "b-order-06",
+      "type": "fix_bug",
+      "title": "Дорогие сначала",
+      "description": "Нужно вывести товары от самых дорогих к самым дешёвым (при равной цене — по названию), но запрос сортирует наоборот.",
+      "difficulty": "easy",
+      "starter": "SELECT name, price\nFROM products\nORDER BY price, name;",
+      "solution": "SELECT name, price FROM products ORDER BY price DESC, name",
+      "hints": ["Для убывания нужен модификатор после столбца."],
+      "explanation": "Без `DESC` сортировка идёт по возрастанию."
+    },
+    {
+      "id": "b-order-07",
+      "type": "fix_bug",
+      "title": "Неправильный порядок частей",
+      "description": "Запрос должен вывести клиентов из Германии, отсортированных по фамилии, но выдаёт синтаксическую ошибку.",
+      "difficulty": "easy",
+      "starter": "SELECT first_name, last_name\nFROM customers\nORDER BY last_name\nWHERE country = 'Germany';",
+      "solution": "SELECT first_name, last_name FROM customers WHERE country = 'Germany' ORDER BY last_name",
+      "hints": ["`WHERE` всегда идёт раньше `ORDER BY`."],
+      "explanation": "Порядок частей запроса фиксирован: `SELECT … FROM … WHERE … ORDER BY …`."
+    },
+    {
+      "id": "b-order-08",
+      "type": "choose_query",
+      "title": "Сортировка по номеру столбца",
+      "description": "Какой запрос выводит названия курсов и количество кредитов, отсортированные по кредитам по убыванию, а затем по названию?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT title, credits FROM courses ORDER BY 2 DESC, 1",
+        "SELECT title, credits FROM courses ORDER BY 1 DESC, 2",
+        "SELECT title, credits FROM courses ORDER BY credits, title",
+        "SELECT title, credits FROM courses ORDER BY title DESC"
+      ],
+      "correct": 0,
+      "hints": ["`ORDER BY 2` означает «по второму столбцу результата»."],
+      "explanation": "Числа в `ORDER BY` — это позиции столбцов в `SELECT`. Работает, но именами читается лучше."
+    },
+    {
+      "id": "b-order-09",
+      "type": "explain_query",
+      "title": "NULL при сортировке",
+      "description": "Где окажутся сотрудники без руководителя (`manager_id IS NULL`) в результате этого запроса в SQLite?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT first_name, manager_id\nFROM employees\nORDER BY manager_id;",
+      "options": [
+        "В начале результата: при сортировке по возрастанию NULL считаются меньше любых значений",
+        "В конце результата",
+        "Они будут исключены из результата",
+        "Их положение случайно"
+      ],
+      "correct": 0,
+      "hints": ["В SQLite NULL считается наименьшим значением."],
+      "explanation": "SQLite ставит NULL первыми при `ASC` и последними при `DESC`. Поведение можно явно задать через `NULLS FIRST` / `NULLS LAST`."
+    },
+    {
+      "id": "b-order-10",
+      "type": "fill_blank",
+      "title": "Последние транзакции",
+      "description": "Выведите дату, сумму и тип транзакций от самых новых к самым старым (при одинаковой дате — по `id`).",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "template": "SELECT tx_date, amount, tx_type\nFROM transactions\n{{1}} tx_date {{2}}, id;",
+      "answers": ["ORDER BY", "DESC"],
+      "choices": [["ORDER BY", "SORT BY", "GROUP BY", "ORDER"], ["DESC", "ASC", "DOWN", "REVERSE"]],
+      "hints": ["Новые записи имеют большую дату."],
+      "explanation": "`ORDER BY tx_date DESC` ставит самые поздние транзакции первыми."
+    },
+    {
+      "id": "b-order-11",
+      "type": "order_parts",
+      "title": "Отделы по бюджету",
+      "description": "Соберите запрос: названия и бюджеты отделов из Берлина, от большего бюджета к меньшему.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "parts": ["SELECT name, budget", "FROM departments", "WHERE location = 'Berlin'", "ORDER BY budget DESC"],
+      "hints": ["Фильтрация идёт до сортировки."],
+      "explanation": "Сначала `WHERE` оставляет отделы из Берлина, затем `ORDER BY` упорядочивает их."
+    }
+  ]
+}

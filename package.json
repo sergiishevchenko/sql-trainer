@@ -22,7 +22,7 @@
     "test:content": "vitest run tests/integration/content.test.ts",
     "test:e2e": "electron-vite build && playwright test",
     "db:generate": "drizzle-kit generate",
-    "content:report": "vite-node scripts/content-report.ts"
+    "content:report": "vite-node --config vitest.config.ts scripts/content-report.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.0",

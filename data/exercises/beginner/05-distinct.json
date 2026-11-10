@@ -1,0 +1,141 @@
+{
+  "module": "beginner.distinct",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-distinct-01",
+      "type": "write_query",
+      "title": "Страны клиентов",
+      "description": "Выведите список стран, в которых живут клиенты, без повторов (столбец `country`).",
+      "difficulty": "easy",
+      "solution": "SELECT DISTINCT country FROM customers",
+      "alt": ["SELECT country FROM customers GROUP BY country"],
+      "hints": ["`DISTINCT` пишется сразу после `SELECT`."],
+      "explanation": "`SELECT DISTINCT` оставляет только уникальные значения выбранных столбцов."
+    },
+    {
+      "id": "b-distinct-02",
+      "type": "write_query",
+      "title": "Статусы заказов",
+      "description": "Какие статусы встречаются в таблице `orders`? Выведите каждый статус один раз.",
+      "difficulty": "easy",
+      "solution": "SELECT DISTINCT status FROM orders",
+      "hints": ["Нужен только столбец `status`, без повторов."],
+      "explanation": "Без `DISTINCT` каждый статус повторился бы столько раз, сколько заказов с ним."
+    },
+    {
+      "id": "b-distinct-03",
+      "type": "write_query",
+      "title": "Пары страна и город",
+      "description": "Выведите уникальные пары `country`, `city` из таблицы клиентов.",
+      "difficulty": "easy",
+      "solution": "SELECT DISTINCT country, city FROM customers",
+      "hints": ["`DISTINCT` применяется ко всей строке результата, а не к одному столбцу."],
+      "explanation": "При нескольких столбцах уникальной должна быть комбинация значений, поэтому `Paris` и `Lyon` во Франции — разные строки."
+    },
+    {
+      "id": "b-distinct-04",
+      "type": "write_query",
+      "title": "Должности сотрудников",
+      "description": "Выведите уникальные должности (`job_title`) сотрудников, отсортированные по алфавиту.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT DISTINCT job_title FROM employees ORDER BY job_title",
+      "hints": ["Сначала `SELECT DISTINCT`, затем `ORDER BY`."],
+      "explanation": "Сортировка применяется к результату уже после удаления дубликатов."
+    },
+    {
+      "id": "b-distinct-05",
+      "type": "write_query",
+      "title": "Города доставки",
+      "description": "В какие города отправлялись заказы? Выведите уникальные значения `shipping_city`.",
+      "difficulty": "easy",
+      "solution": "SELECT DISTINCT shipping_city FROM orders",
+      "hints": ["Город доставки хранится в таблице `orders`."],
+      "explanation": "`DISTINCT` превращает список из 30 заказов в короткий список городов."
+    },
+    {
+      "id": "b-distinct-06",
+      "type": "fix_bug",
+      "title": "Повторяющиеся бренды",
+      "description": "Запрос должен вывести список брендов без повторов, но бренды повторяются. Исправьте запрос.",
+      "difficulty": "easy",
+      "starter": "SELECT brand\nFROM products;",
+      "solution": "SELECT DISTINCT brand FROM products",
+      "hints": ["Не хватает одного ключевого слова после `SELECT`."],
+      "explanation": "Без `DISTINCT` выводится бренд каждого товара, в том числе повторяющиеся."
+    },
+    {
+      "id": "b-distinct-07",
+      "type": "predict_result",
+      "title": "Сколько возрастных рейтингов",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "sql": "SELECT DISTINCT age_rating FROM movies;",
+      "ask": "rowCount",
+      "options": ["30", "4", "8", "1"],
+      "hints": ["Возрастных рейтингов немного: G, PG, PG-13, R."],
+      "explanation": "Запрос возвращает по одной строке на каждый уникальный возрастной рейтинг."
+    },
+    {
+      "id": "b-distinct-08",
+      "type": "choose_query",
+      "title": "Уникальные города студентов",
+      "description": "Какой запрос выведет каждый город студентов ровно один раз?",
+      "difficulty": "easy",
+      "dataset": "university",
+      "options": [
+        "SELECT DISTINCT city FROM students",
+        "SELECT city FROM students",
+        "SELECT DISTINCT full_name, city FROM students",
+        "SELECT city FROM students WHERE city IS NULL"
+      ],
+      "correct": 0,
+      "hints": ["Если добавить имя, уникальной станет пара «имя + город»."],
+      "explanation": "`DISTINCT` по одному столбцу `city` убирает повторы городов. Добавление `full_name` делает строки снова уникальными."
+    },
+    {
+      "id": "b-distinct-09",
+      "type": "explain_query",
+      "title": "DISTINCT и NULL",
+      "description": "Как `DISTINCT` обрабатывает несколько строк, где `brand` равен `NULL`?",
+      "difficulty": "medium",
+      "sql": "SELECT DISTINCT brand FROM products;",
+      "options": [
+        "Все NULL-значения схлопываются в одну строку с NULL",
+        "Строки с NULL полностью исключаются из результата",
+        "Каждая строка с NULL выводится отдельно",
+        "Запрос завершится ошибкой"
+      ],
+      "correct": 0,
+      "hints": ["Для `DISTINCT` значения NULL считаются одинаковыми."],
+      "explanation": "Хотя `NULL = NULL` не истинно, при удалении дубликатов SQL считает NULL-ы равными друг другу и оставляет одну строку."
+    },
+    {
+      "id": "b-distinct-10",
+      "type": "fill_blank",
+      "title": "Типы счетов",
+      "description": "Выведите уникальные комбинации типа счёта и валюты.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "template": "SELECT {{1}} account_type, currency\nFROM {{2}};",
+      "answers": ["DISTINCT", "accounts"],
+      "choices": [["DISTINCT", "UNIQUE", "ALL", "ONLY"], ["accounts", "clients", "transactions", "loans"]],
+      "hints": ["В SQL для удаления дубликатов используется не UNIQUE."],
+      "explanation": "`UNIQUE` — это ограничение таблицы, а в запросах для удаления повторов используется `DISTINCT`."
+    },
+    {
+      "id": "b-distinct-11",
+      "type": "order_parts",
+      "title": "Страны актёров",
+      "description": "Соберите запрос, который выводит уникальные страны актёров в алфавитном порядке.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "parts": ["SELECT DISTINCT country", "FROM actors", "ORDER BY country"],
+      "distractors": ["GROUP country"],
+      "hints": ["Порядок частей: SELECT → FROM → ORDER BY."],
+      "explanation": "`ORDER BY` всегда идёт последним, а `DISTINCT` — часть `SELECT`."
+    }
+  ]
+}

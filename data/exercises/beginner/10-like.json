@@ -1,0 +1,132 @@
+{
+  "module": "beginner.like",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-like-01",
+      "type": "write_query",
+      "title": "Начинается с буквы",
+      "description": "Выведите имена и фамилии клиентов, чья фамилия начинается на `M`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, last_name FROM customers WHERE last_name LIKE 'M%'",
+      "hints": ["`%` означает любое количество любых символов."],
+      "explanation": "Шаблон `'M%'` совпадает со строками, начинающимися на `M`."
+    },
+    {
+      "id": "b-like-02",
+      "type": "write_query",
+      "title": "Почта Gmail",
+      "description": "Выведите имя и email клиентов, у которых почта на домене `gmail.com`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, email FROM customers WHERE email LIKE '%@gmail.com'",
+      "hints": ["Шаблон должен заканчиваться доменом."],
+      "explanation": "`%` в начале шаблона позволяет любой текст перед `@gmail.com`."
+    },
+    {
+      "id": "b-like-03",
+      "type": "write_query",
+      "title": "Содержит слово",
+      "description": "Выведите названия товаров, в названии которых встречается слово `Pro`.",
+      "difficulty": "easy",
+      "solution": "SELECT name FROM products WHERE name LIKE '%Pro%'",
+      "hints": ["Используйте `%` с обеих сторон."],
+      "explanation": "`'%Pro%'` ищет подстроку в любом месте. В SQLite `LIKE` по умолчанию не чувствителен к регистру латиницы, поэтому совпадёт и `Programmer`."
+    },
+    {
+      "id": "b-like-04",
+      "type": "write_query",
+      "title": "Ровно пять букв",
+      "description": "Выведите имена (`first_name`) клиентов, состоящие ровно из 5 символов.",
+      "difficulty": "medium",
+      "solution": "SELECT first_name FROM customers WHERE first_name LIKE '_____'",
+      "alt": ["SELECT first_name FROM customers WHERE length(first_name) = 5"],
+      "hints": ["`_` совпадает ровно с одним символом."],
+      "explanation": "Пять подчёркиваний — это шаблон для строк длиной ровно 5 символов."
+    },
+    {
+      "id": "b-like-05",
+      "type": "write_query",
+      "title": "Фильмы с The",
+      "description": "Выведите названия фильмов, которые начинаются с артикля `The ` (с пробелом после).",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title FROM movies WHERE title LIKE 'The %'",
+      "hints": ["Пробел — тоже часть шаблона."],
+      "explanation": "Пробел в шаблоне отсекает слова вроде `Them` или `Theory`."
+    },
+    {
+      "id": "b-like-06",
+      "type": "write_query",
+      "title": "Кроме инженеров",
+      "description": "Выведите имя и должность сотрудников, в должности которых **нет** слова `Engineer`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, job_title FROM employees WHERE job_title NOT LIKE '%Engineer%'",
+      "hints": ["Используйте `NOT LIKE`."],
+      "explanation": "`NOT LIKE` инвертирует сопоставление с шаблоном."
+    },
+    {
+      "id": "b-like-07",
+      "type": "write_query",
+      "title": "Вторая буква",
+      "description": "Выведите названия курсов, у которых вторая буква названия — `a` (без учёта регистра).",
+      "difficulty": "medium",
+      "dataset": "university",
+      "solution": "SELECT title FROM courses WHERE title LIKE '_a%'",
+      "hints": ["Один `_` пропускает первый символ."],
+      "explanation": "`'_a%'`: любой первый символ, затем `a`, затем что угодно."
+    },
+    {
+      "id": "b-like-08",
+      "type": "fix_bug",
+      "title": "Шаблон без подстановок",
+      "description": "Запрос должен вывести все товары, в названии которых есть `Book`, но возвращает пустой результат.",
+      "difficulty": "easy",
+      "starter": "SELECT name\nFROM products\nWHERE name LIKE 'Book';",
+      "solution": "SELECT name FROM products WHERE name LIKE '%Book%'",
+      "hints": ["Без `%` шаблон требует точного совпадения всей строки."],
+      "explanation": "`LIKE 'Book'` работает как `= 'Book'` (без учёта регистра), а таких названий нет."
+    },
+    {
+      "id": "b-like-09",
+      "type": "predict_result",
+      "title": "Совпадения по окончанию",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT id FROM employees WHERE job_title LIKE '%Manager';",
+      "ask": "rowCount",
+      "hints": ["Найдите должности, которые заканчиваются на `Manager`."],
+      "explanation": "Шаблон `'%Manager'` требует, чтобы строка заканчивалась на `Manager`."
+    },
+    {
+      "id": "b-like-10",
+      "type": "choose_query",
+      "title": "Поиск по коду курса",
+      "description": "Коды курсов информатики начинаются с `CS`. Какой запрос найдёт все такие курсы?",
+      "difficulty": "easy",
+      "dataset": "university",
+      "options": [
+        "SELECT code, title FROM courses WHERE code LIKE 'CS%'",
+        "SELECT code, title FROM courses WHERE code LIKE '%CS'",
+        "SELECT code, title FROM courses WHERE code = 'CS%'",
+        "SELECT code, title FROM courses WHERE code LIKE 'CS_'"
+      ],
+      "correct": 0,
+      "hints": ["`=` не понимает подстановочные символы."],
+      "explanation": "Подстановочные символы работают только с `LIKE`, а `%` в конце означает «дальше что угодно»."
+    },
+    {
+      "id": "b-like-11",
+      "type": "order_parts",
+      "title": "Описания покупок",
+      "description": "Соберите запрос: дата и сумма транзакций, в описании которых встречается слово `Salary`, отсортированные по дате.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "parts": ["SELECT tx_date, amount", "FROM transactions", "WHERE description LIKE '%Salary%'", "ORDER BY tx_date"],
+      "distractors": ["WHERE description = '%Salary%'"],
+      "hints": ["Сравнение `=` с `%` ищет буквальный символ процента."],
+      "explanation": "Для поиска подстроки нужен `LIKE`, а не `=`."
+    }
+  ]
+}
