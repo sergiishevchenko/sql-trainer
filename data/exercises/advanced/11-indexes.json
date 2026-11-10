@@ -1,0 +1,102 @@
+{
+  "module": "advanced.indexes",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "a-idx-01",
+      "type": "write_query",
+      "title": "Первый индекс",
+      "description": "Запросы «заказы клиента» выполняются медленно. Создайте индекс на столбец `customer_id` таблицы `orders`. Имя индекса — любое.",
+      "difficulty": "easy",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_orders_customer ON orders(customer_id)",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT \"unique\" FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_unique FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["`CREATE INDEX имя ON таблица(столбец)`."],
+      "explanation": "Индекс по внешнему ключу ускоряет поиск и соединения по нему."
+    },
+    {
+      "id": "a-idx-02",
+      "type": "write_query",
+      "title": "Составной индекс",
+      "description": "Частый запрос: `WHERE status = ? ORDER BY order_date`. Создайте один составной индекс на `orders`, который обслуживает и фильтр, и сортировку.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_orders_status_date ON orders(status, order_date)",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT \"unique\" FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_unique FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["Сначала столбец равенства, затем столбец сортировки."],
+      "explanation": "В составном индексе порядок важен: столбцы равенства идут первыми, затем — диапазон или сортировка."
+    },
+    {
+      "id": "a-idx-03",
+      "type": "write_query",
+      "title": "Уникальный индекс",
+      "description": "Email клиента должен быть уникальным. Создайте уникальный индекс на `customers(email)`. Несколько NULL при этом допустимы.",
+      "difficulty": "easy",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE UNIQUE INDEX ux_customers_email ON customers(email)",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT \"unique\" FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_unique FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["`CREATE UNIQUE INDEX …`."],
+      "explanation": "Уникальный индекс — это и ускорение поиска, и ограничение целостности. NULL не считаются равными друг другу."
+    },
+    {
+      "id": "a-idx-04",
+      "type": "fix_bug",
+      "title": "Неверный порядок столбцов",
+      "description": "Запрос `SELECT order_id, quantity FROM order_items WHERE product_id = ?` должен искать по индексу. Индекс ниже начинается не с того столбца. Исправьте: индекс должен начинаться с `product_id`, затем `order_id`.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "starter": "CREATE INDEX idx_items_product ON order_items(order_id, product_id);",
+      "solution": "CREATE INDEX idx_items_product ON order_items(product_id, order_id)",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT \"unique\" FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_unique FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["Индекс используется для поиска только по левому префиксу столбцов."],
+      "explanation": "Индекс `(a, b)` помогает условиям по `a` и по `a, b`, но не по одному `b`."
+    },
+    {
+      "id": "a-idx-05",
+      "type": "write_query",
+      "title": "Частичный индекс",
+      "description": "Нужен быстрый поиск только среди заказов в статусе `processing`. Создайте частичный индекс на `orders(order_date)` с условием `WHERE status = 'processing'`.",
+      "difficulty": "hard",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_orders_processing ON orders(order_date) WHERE status = 'processing'",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT partial FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_partial, lower(replace(replace(substr(m.sql, instr(upper(m.sql), 'WHERE') + 5), ' ', ''), char(10), '')) AS cond FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["`CREATE INDEX … ON orders(order_date) WHERE status = 'processing'`."],
+      "explanation": "Частичный индекс меньше обычного и обслуживает только запросы с тем же условием."
+    },
+    {
+      "id": "a-idx-06",
+      "type": "write_query",
+      "title": "Индексы для соединений",
+      "description": "Отчёт по отзывам соединяет `reviews` с `products` и `customers`. Создайте два индекса: на `reviews(product_id)` и на `reviews(customer_id)`.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_reviews_product ON reviews(product_id); CREATE INDEX idx_reviews_customer ON reviews(customer_id)",
+      "check": "SELECT m.tbl_name, (SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) AS cols, (SELECT \"unique\" FROM pragma_index_list(m.tbl_name) il WHERE il.name = m.name) AS is_unique FROM sqlite_master m WHERE m.type = 'index' AND m.sql IS NOT NULL",
+      "hints": ["Две команды `CREATE INDEX` через точку с запятой."],
+      "explanation": "Внешние ключи, по которым часто соединяют таблицы, — первые кандидаты на индексы."
+    },
+    {
+      "id": "a-idx-07",
+      "type": "explain_query",
+      "title": "Цена индекса",
+      "description": "Почему не стоит создавать индекс на каждый столбец каждой таблицы?",
+      "difficulty": "easy",
+      "sql": "CREATE INDEX idx_products_name ON products(name);\nCREATE INDEX idx_products_brand ON products(brand);\nCREATE INDEX idx_products_price ON products(price);\nCREATE INDEX idx_products_stock ON products(stock);",
+      "options": [
+        "Каждый индекс занимает место и замедляет INSERT, UPDATE и DELETE, ведь его тоже нужно обновлять",
+        "SQLite разрешает не больше одного индекса на таблицу",
+        "Индексы ускоряют только INSERT, а SELECT замедляют",
+        "Индексы удаляются при каждом перезапуске базы"
+      ],
+      "correct": 0,
+      "hints": ["Что происходит с индексом при изменении данных?"],
+      "explanation": "Индексы — компромисс: быстрее чтение, медленнее запись и больше места на диске."
+    }
+  ]
+}

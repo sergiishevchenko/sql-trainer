@@ -1,0 +1,93 @@
+{
+  "module": "advanced.partition-by",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "a-part-01",
+      "type": "write_query",
+      "title": "Средняя по отделу рядом",
+      "description": "Выведите имя, `department_id`, зарплату и среднюю зарплату отдела сотрудника (`dept_avg`, округлить до целого). Сотрудника без отдела не учитывайте.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, department_id, salary, ROUND(AVG(salary) OVER (PARTITION BY department_id)) AS dept_avg FROM employees WHERE department_id IS NOT NULL",
+      "hints": ["`AVG(salary) OVER (PARTITION BY department_id)`."],
+      "explanation": "Каждая строка получает агрегат своей партиции."
+    },
+    {
+      "id": "a-part-02",
+      "type": "write_query",
+      "title": "Доля в отделе",
+      "description": "Выведите имя, `department_id` и долю зарплаты сотрудника в фонде оплаты его отдела в процентах (`pct`, округлить до 1 знака). Сотрудника без отдела не учитывайте. Отсортируйте по отделу, затем по доле по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "solution": "SELECT first_name, department_id, ROUND(100.0 * salary / SUM(salary) OVER (PARTITION BY department_id), 1) AS pct FROM employees WHERE department_id IS NOT NULL ORDER BY department_id, pct DESC, first_name",
+      "hints": ["Делите на `SUM(salary) OVER (PARTITION BY department_id)`."],
+      "explanation": "Доля внутри группы считается без подзапроса и без схлопывания строк."
+    },
+    {
+      "id": "a-part-03",
+      "type": "write_query",
+      "title": "Мин и макс в категории",
+      "description": "Для товаров с категорией выведите название, `category_id`, цену, минимальную (`min_price`) и максимальную (`max_price`) цену в категории.",
+      "difficulty": "easy",
+      "dataset": "ecommerce",
+      "solution": "SELECT name, category_id, price, MIN(price) OVER (PARTITION BY category_id) AS min_price, MAX(price) OVER (PARTITION BY category_id) AS max_price FROM products WHERE category_id IS NOT NULL",
+      "alt": ["SELECT name, category_id, price, MIN(price) OVER w AS min_price, MAX(price) OVER w AS max_price FROM products WHERE category_id IS NOT NULL WINDOW w AS (PARTITION BY category_id)"],
+      "hints": ["Два окна с одинаковой партицией (или именованное окно `WINDOW`)."],
+      "explanation": "Именованное окно `WINDOW w AS (...)` избавляет от повторов."
+    },
+    {
+      "id": "a-part-04",
+      "type": "write_query",
+      "title": "Выше среднего по жанру",
+      "description": "Выведите фильмы, рейтинг которых выше среднего по их жанру: название, `genre_id`, рейтинг и средний рейтинг жанра (`genre_avg`, округлить до 2 знаков). Отсортируйте по `genre_id`, затем по рейтингу по убыванию, затем по названию.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "WITH t AS (SELECT title, genre_id, rating, AVG(rating) OVER (PARTITION BY genre_id) AS genre_avg FROM movies) SELECT title, genre_id, rating, ROUND(genre_avg, 2) AS genre_avg FROM t WHERE rating > genre_avg ORDER BY genre_id, rating DESC, title",
+      "hints": ["Посчитайте окно в CTE, отфильтруйте снаружи."],
+      "explanation": "Сочетание партиции и фильтрации — замена коррелированного подзапроса."
+    },
+    {
+      "id": "a-part-05",
+      "type": "write_query",
+      "title": "Количество в группе",
+      "description": "Для каждого студента выведите имя, `faculty_id` и количество студентов на его факультете (`faculty_size`). Отсортируйте по `faculty_id`, затем по имени.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT full_name, faculty_id, COUNT(*) OVER (PARTITION BY faculty_id) AS faculty_size FROM students ORDER BY faculty_id, full_name",
+      "hints": ["`COUNT(*) OVER (PARTITION BY faculty_id)`."],
+      "explanation": "Размер группы доступен в каждой строке без `GROUP BY`."
+    },
+    {
+      "id": "a-part-06",
+      "type": "write_query",
+      "title": "Две разные партиции",
+      "description": "Для каждого фильма выведите название, средний рейтинг его жанра (`genre_avg`) и средний рейтинг его режиссёра (`director_avg`), оба округлить до 2 знаков.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT title, ROUND(AVG(rating) OVER (PARTITION BY genre_id), 2) AS genre_avg, ROUND(AVG(rating) OVER (PARTITION BY director_id), 2) AS director_avg FROM movies",
+      "hints": ["В одном запросе можно использовать окна с разными партициями."],
+      "explanation": "Каждое окно независимо определяет свою группировку."
+    },
+    {
+      "id": "a-part-07",
+      "type": "fix_bug",
+      "title": "GROUP BY вместо окна",
+      "description": "Запрос должен вывести **каждого** сотрудника с максимальной зарплатой его отдела, но выдаёт по одной строке на отдел. Перепишите с использованием окна.",
+      "difficulty": "medium",
+      "starter": "SELECT department_id, first_name, MAX(salary) AS dept_max\nFROM employees\nGROUP BY department_id;",
+      "solution": "SELECT department_id, first_name, MAX(salary) OVER (PARTITION BY department_id) AS dept_max FROM employees",
+      "hints": ["Замените `GROUP BY` на `OVER (PARTITION BY …)`."],
+      "explanation": "`GROUP BY` схлопывает строки, окно — сохраняет."
+    },
+    {
+      "id": "a-part-08",
+      "type": "business_case",
+      "title": "Вклад продавцов в регион",
+      "description": "Руководитель продаж хочет видеть вклад каждого продавца в выручку своего региона. Выведите регион (`region`), имя продавца (`rep`), выручку продавца (`revenue` = `SUM(quantity * unit_price * (1 - discount))`, округлить до 2 знаков) и долю в выручке региона (`share_pct`, округлить до 1 знака). Отсортируйте по региону, затем по выручке по убыванию.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH rev AS (SELECT sr.region_id, sr.name AS rep, SUM(s.quantity * p.unit_price * (1 - s.discount)) AS revenue FROM sales s JOIN products p ON p.id = s.product_id JOIN sales_reps sr ON sr.id = s.rep_id GROUP BY sr.id, sr.region_id, sr.name) SELECT r.name AS region, rev.rep, ROUND(rev.revenue, 2) AS revenue, ROUND(100.0 * rev.revenue / SUM(rev.revenue) OVER (PARTITION BY rev.region_id), 1) AS share_pct FROM rev JOIN regions r ON r.id = rev.region_id ORDER BY region, rev.revenue DESC",
+      "hints": ["Сначала посчитайте выручку по продавцам.", "Затем — долю через `SUM(...) OVER (PARTITION BY region_id)`."],
+      "explanation": "Агрегат + окно с партицией — стандартный способ посчитать доли внутри групп."
+    }
+  ]
+}

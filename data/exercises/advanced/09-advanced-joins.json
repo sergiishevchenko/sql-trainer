@@ -1,0 +1,99 @@
+{
+  "module": "advanced.advanced-joins",
+  "dataset": "sales",
+  "exercises": [
+    {
+      "id": "a-join-01",
+      "type": "write_query",
+      "title": "Соединение по двум ключам",
+      "description": "Для каждой продажи из `sales` выведите `id`, имя продавца и план (`target_amount`) этого продавца на месяц продажи. Продажи без плана не нужны. Отсортируйте по `id`.",
+      "difficulty": "medium",
+      "solution": "SELECT s.id, sr.name, t.target_amount FROM sales s JOIN sales_reps sr ON sr.id = s.rep_id JOIN monthly_targets t ON t.rep_id = s.rep_id AND t.month = strftime('%Y-%m', s.sale_date) ORDER BY s.id",
+      "hints": ["Условие соединения: и продавец, и месяц."],
+      "explanation": "Составное условие `ON … AND …` связывает строки по нескольким признакам."
+    },
+    {
+      "id": "a-join-02",
+      "type": "write_query",
+      "title": "Ценовые диапазоны",
+      "description": "Отнесите товары интернет-магазина к ценовым диапазонам с помощью соединения по диапазону: `budget` [0, 100), `mid` [100, 500), `premium` [500, ∞). Диапазоны задайте через CTE с `VALUES`. Выведите название диапазона (`band`) и количество товаров. Отсортируйте по названию диапазона.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "WITH bands(band, low, high) AS (VALUES ('budget', 0, 100), ('mid', 100, 500), ('premium', 500, 1000000000)) SELECT b.band, COUNT(*) FROM products p JOIN bands b ON p.price >= b.low AND p.price < b.high GROUP BY b.band ORDER BY b.band",
+      "alt": ["SELECT CASE WHEN price < 100 THEN 'budget' WHEN price < 500 THEN 'mid' ELSE 'premium' END AS band, COUNT(*) FROM products GROUP BY band ORDER BY band"],
+      "hints": ["Условие `ON` может быть неравенством: `p.price >= b.low AND p.price < b.high`."],
+      "explanation": "Соединение по диапазону удобно, когда границы хранятся в справочнике."
+    },
+    {
+      "id": "a-join-03",
+      "type": "write_query",
+      "title": "Зарплата на дату",
+      "description": "По таблице `salary_history` (база `employees`) найдите зарплату каждого сотрудника из истории на дату `2022-01-01`: последнюю запись с `changed_at <= '2022-01-01'`. Выведите `employee_id` и `salary`. Сотрудники без записей до этой даты не нужны. Отсортируйте по `employee_id`.",
+      "difficulty": "hard",
+      "dataset": "employees",
+      "solution": "SELECT h.employee_id, h.salary FROM salary_history h WHERE h.changed_at = (SELECT MAX(x.changed_at) FROM salary_history x WHERE x.employee_id = h.employee_id AND x.changed_at <= '2022-01-01') ORDER BY h.employee_id",
+      "alt": ["WITH r AS (SELECT employee_id, salary, ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY changed_at DESC, id DESC) AS rn FROM salary_history WHERE changed_at <= '2022-01-01') SELECT employee_id, salary FROM r WHERE rn = 1 ORDER BY employee_id"],
+      "hints": ["Найдите максимальную дату изменения не позже заданной для каждого сотрудника."],
+      "explanation": "Задача «значение на дату» решается через `MAX` по дате или `ROW_NUMBER`."
+    },
+    {
+      "id": "a-join-04",
+      "type": "write_query",
+      "title": "Anti-join по двум условиям",
+      "description": "Найдите пары (продавец, продукт), для которых не было ни одной продажи. Выведите имя продавца и название продукта. Отсортируйте по имени продавца, затем по продукту.",
+      "difficulty": "medium",
+      "solution": "SELECT sr.name, p.name FROM sales_reps sr CROSS JOIN products p WHERE NOT EXISTS (SELECT 1 FROM sales s WHERE s.rep_id = sr.id AND s.product_id = p.id) ORDER BY sr.name, p.name",
+      "alt": ["SELECT sr.name, p.name FROM sales_reps sr CROSS JOIN products p LEFT JOIN sales s ON s.rep_id = sr.id AND s.product_id = p.id WHERE s.id IS NULL ORDER BY sr.name, p.name"],
+      "hints": ["Сетка всех пар + `NOT EXISTS`."],
+      "explanation": "Anti-join по составному ключу находит «дыры» в покрытии."
+    },
+    {
+      "id": "a-join-05",
+      "type": "write_query",
+      "title": "Без размножения строк",
+      "description": "Для каждого заказа интернет-магазина выведите `id`, количество позиций (`items`) и количество отзывов клиента (`customer_reviews`). Агрегируйте каждую сторону отдельно, чтобы строки не размножались. Отсортируйте по `id`.",
+      "difficulty": "hard",
+      "dataset": "ecommerce",
+      "solution": "WITH items AS (SELECT order_id, COUNT(*) AS items FROM order_items GROUP BY order_id), rv AS (SELECT customer_id, COUNT(*) AS customer_reviews FROM reviews GROUP BY customer_id) SELECT o.id, COALESCE(i.items, 0) AS items, COALESCE(rv.customer_reviews, 0) AS customer_reviews FROM orders o LEFT JOIN items i ON i.order_id = o.id LEFT JOIN rv ON rv.customer_id = o.customer_id ORDER BY o.id",
+      "hints": ["Если соединить позиции и отзывы напрямую, количество строк перемножится.", "Агрегируйте в CTE, затем соединяйте."],
+      "explanation": "Fan-out — одна из самых частых ошибок в аналитических запросах."
+    },
+    {
+      "id": "a-join-06",
+      "type": "fix_bug",
+      "title": "Завышенные суммы",
+      "description": "Запрос должен для каждого продавца вывести количество продаж и план на январь 2024, но число продаж умножено на число строк плана. Исправьте, агрегируя продажи до соединения.",
+      "difficulty": "hard",
+      "starter": "SELECT sr.name, COUNT(s.id) AS deals, SUM(t.target_amount) AS target\nFROM sales_reps sr\nJOIN sales s ON s.rep_id = sr.id\nJOIN monthly_targets t ON t.rep_id = sr.id\nGROUP BY sr.id, sr.name;",
+      "solution": "SELECT sr.name, d.deals, t.target_amount AS target FROM sales_reps sr JOIN (SELECT rep_id, COUNT(*) AS deals FROM sales GROUP BY rep_id) d ON d.rep_id = sr.id JOIN monthly_targets t ON t.rep_id = sr.id AND t.month = '2024-01'",
+      "hints": ["Посчитайте продажи в подзапросе.", "Ограничьте план одним месяцем."],
+      "explanation": "Соединение двух «многих» сторон перемножает строки. Агрегируйте до соединения."
+    },
+    {
+      "id": "a-join-07",
+      "type": "choose_query",
+      "title": "Semi-join",
+      "description": "Какой запрос выведет каждого продавца, у которого были продажи со скидкой, **ровно один раз** без `DISTINCT`?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT name FROM sales_reps sr WHERE EXISTS (SELECT 1 FROM sales s WHERE s.rep_id = sr.id AND s.discount > 0)",
+        "SELECT sr.name FROM sales_reps sr JOIN sales s ON s.rep_id = sr.id WHERE s.discount > 0",
+        "SELECT sr.name FROM sales_reps sr LEFT JOIN sales s ON s.rep_id = sr.id AND s.discount > 0",
+        "SELECT name FROM sales_reps sr WHERE NOT EXISTS (SELECT 1 FROM sales s WHERE s.rep_id = sr.id AND s.discount > 0)"
+      ],
+      "correct": 0,
+      "hints": ["`JOIN` повторяет продавца для каждой подходящей продажи."],
+      "explanation": "Semi-join через `EXISTS` проверяет наличие без размножения строк."
+    },
+    {
+      "id": "a-join-08",
+      "type": "business_case",
+      "title": "Иерархия продаж",
+      "description": "Директор хочет видеть выручку команд: для каждого менеджера (продавца без `manager_id`) выведите имя (`manager`), его собственную выручку (`own_revenue`) и выручку его подчинённых (`team_revenue`). Выручка = `SUM(quantity * unit_price * (1 - discount))`, округлить до 2 знаков, 0 если продаж нет. Отсортируйте по имени.",
+      "difficulty": "hard",
+      "solution": "WITH rev AS (SELECT s.rep_id, SUM(s.quantity * p.unit_price * (1 - s.discount)) AS revenue FROM sales s JOIN products p ON p.id = s.product_id GROUP BY s.rep_id) SELECT m.name AS manager, ROUND(COALESCE((SELECT revenue FROM rev WHERE rev.rep_id = m.id), 0), 2) AS own_revenue, ROUND(COALESCE((SELECT SUM(rev.revenue) FROM sales_reps sub JOIN rev ON rev.rep_id = sub.id WHERE sub.manager_id = m.id), 0), 2) AS team_revenue FROM sales_reps m WHERE m.manager_id IS NULL ORDER BY manager",
+      "hints": ["Посчитайте выручку по продавцам в CTE.", "Подчинённых найдите через `manager_id = m.id`."],
+      "explanation": "Комбинация self join (иерархия) и предагрегированных фактов даёт отчёт по командам."
+    }
+  ]
+}

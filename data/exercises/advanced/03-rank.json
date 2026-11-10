@@ -1,0 +1,104 @@
+{
+  "module": "advanced.rank",
+  "dataset": "movies",
+  "exercises": [
+    {
+      "id": "a-rank-01",
+      "type": "write_query",
+      "title": "Рейтинг фильмов",
+      "description": "Выведите название, рейтинг и место фильма (`place`) по убыванию рейтинга. Фильмы с одинаковым рейтингом делят место.",
+      "difficulty": "easy",
+      "solution": "SELECT title, rating, RANK() OVER (ORDER BY rating DESC) AS place FROM movies",
+      "hints": ["`RANK()` даёт одинаковое место равным значениям."],
+      "explanation": "После группы равных значений `RANK` пропускает места."
+    },
+    {
+      "id": "a-rank-02",
+      "type": "write_query",
+      "title": "Места в жанре",
+      "description": "Выведите `genre_id`, название, рейтинг и место фильма внутри жанра (`place_in_genre`) по убыванию рейтинга.",
+      "difficulty": "easy",
+      "solution": "SELECT genre_id, title, rating, RANK() OVER (PARTITION BY genre_id ORDER BY rating DESC) AS place_in_genre FROM movies",
+      "hints": ["Добавьте `PARTITION BY genre_id`."],
+      "explanation": "Каждый жанр получает собственную таблицу мест."
+    },
+    {
+      "id": "a-rank-03",
+      "type": "write_query",
+      "title": "Лидеры жанров с учётом равенства",
+      "description": "Выведите все фильмы, занимающие первое место по рейтингу в своём жанре (если таких несколько — все). Выведите `genre_id`, название и рейтинг. Отсортируйте по `genre_id`, затем по названию.",
+      "difficulty": "medium",
+      "solution": "WITH r AS (SELECT genre_id, title, rating, RANK() OVER (PARTITION BY genre_id ORDER BY rating DESC) AS rk FROM movies) SELECT genre_id, title, rating FROM r WHERE rk = 1 ORDER BY genre_id, title",
+      "alt": ["SELECT m.genre_id, m.title, m.rating FROM movies m WHERE m.rating = (SELECT MAX(x.rating) FROM movies x WHERE x.genre_id = m.genre_id) ORDER BY m.genre_id, m.title"],
+      "hints": ["`RANK` = 1 для всех лидеров, `ROW_NUMBER` выбрал бы одного."],
+      "explanation": "`RANK` корректно обрабатывает равенство на первом месте."
+    },
+    {
+      "id": "a-rank-04",
+      "type": "write_query",
+      "title": "Рейтинг продавцов",
+      "description": "Посчитайте количество проданных единиц каждым продавцом и его место (`place`) по убыванию количества. Выведите имя, `units` и `place`. Отсортируйте по месту, затем по имени.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "SELECT sr.name, SUM(s.quantity) AS units, RANK() OVER (ORDER BY SUM(s.quantity) DESC) AS place FROM sales s JOIN sales_reps sr ON sr.id = s.rep_id GROUP BY sr.id, sr.name ORDER BY place, sr.name",
+      "hints": ["Окно можно строить по агрегату: `RANK() OVER (ORDER BY SUM(quantity) DESC)`."],
+      "explanation": "Окно вычисляется после группировки, поэтому может ранжировать агрегаты."
+    },
+    {
+      "id": "a-rank-05",
+      "type": "write_query",
+      "title": "Процентиль зарплаты",
+      "description": "Выведите имя, зарплату и относительное положение сотрудника `pr` (функция `PERCENT_RANK` по возрастанию зарплаты, округлить до 2 знаков).",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT first_name, salary, ROUND(PERCENT_RANK() OVER (ORDER BY salary), 2) AS pr FROM employees",
+      "hints": ["`PERCENT_RANK()` возвращает значение от 0 до 1."],
+      "explanation": "`PERCENT_RANK` = (RANK − 1) / (N − 1): 0 у минимальной зарплаты, 1 у максимальной."
+    },
+    {
+      "id": "a-rank-06",
+      "type": "predict_result",
+      "title": "Пропуск мест",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT MAX(r) FROM (\n  SELECT RANK() OVER (ORDER BY v DESC) AS r\n  FROM (SELECT 10 AS v UNION ALL SELECT 9 UNION ALL SELECT 9 UNION ALL SELECT 8)\n);",
+      "ask": "value",
+      "options": ["3", "4", "2"],
+      "hints": ["Два значения 9 делят второе место."],
+      "explanation": "Места: 10 → 1, 9 → 2, 9 → 2, 8 → 4. Третье место пропущено."
+    },
+    {
+      "id": "a-rank-07",
+      "type": "choose_query",
+      "title": "Подходящая функция",
+      "description": "Нужно вывести места спортсменов «как в спорте»: при равенстве одинаковое место, следующее место пропускается. Какой запрос подходит для рейтинга фильмов?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT title, RANK() OVER (ORDER BY rating DESC) AS place FROM movies",
+        "SELECT title, ROW_NUMBER() OVER (ORDER BY rating DESC, id) AS place FROM movies",
+        "SELECT title, DENSE_RANK() OVER (ORDER BY rating DESC) AS place FROM movies",
+        "SELECT title, NTILE(3) OVER (ORDER BY rating DESC) AS place FROM movies"
+      ],
+      "correct": 0,
+      "hints": ["`DENSE_RANK` не пропускает места."],
+      "explanation": "Только `RANK` даёт одинаковые места с пропуском следующих."
+    },
+    {
+      "id": "a-rank-08",
+      "type": "explain_query",
+      "title": "RANK и ORDER BY",
+      "description": "Что произойдёт, если в `OVER` не указать `ORDER BY`?",
+      "difficulty": "hard",
+      "sql": "SELECT title, RANK() OVER () AS place FROM movies;",
+      "options": [
+        "Все строки равны между собой, поэтому все получат место 1",
+        "Будет ошибка",
+        "Места распределятся по порядку вставки",
+        "Места распределятся по первичному ключу"
+      ],
+      "correct": 0,
+      "hints": ["Без сортировки все строки — «равные» в окне."],
+      "explanation": "Без `ORDER BY` у всех строк одинаковое значение сортировки, и `RANK` возвращает 1 для каждой."
+    }
+  ]
+}

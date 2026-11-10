@@ -1,0 +1,94 @@
+{
+  "module": "advanced.lag-lead",
+  "dataset": "sales",
+  "exercises": [
+    {
+      "id": "a-lag-01",
+      "type": "write_query",
+      "title": "Предыдущая продажа",
+      "description": "Для каждой продажи выведите `id`, дату и дату предыдущей продажи (`prev_date`) в общем хронологическом порядке (при равной дате — по `id`).",
+      "difficulty": "easy",
+      "solution": "SELECT id, sale_date, LAG(sale_date) OVER (ORDER BY sale_date, id) AS prev_date FROM sales",
+      "hints": ["`LAG(столбец) OVER (ORDER BY …)`."],
+      "explanation": "У первой строки предыдущей нет, поэтому `LAG` вернёт NULL."
+    },
+    {
+      "id": "a-lag-02",
+      "type": "write_query",
+      "title": "Динамика по месяцам",
+      "description": "Посчитайте количество проданных единиц по месяцам (`month` в формате `YYYY-MM`, `units`) и изменение относительно предыдущего месяца (`change`). Отсортируйте по месяцу.",
+      "difficulty": "medium",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', sale_date) AS month, SUM(quantity) AS units FROM sales GROUP BY month) SELECT month, units, units - LAG(units) OVER (ORDER BY month) AS change FROM m ORDER BY month",
+      "hints": ["Сначала агрегируйте по месяцам, затем примените `LAG`."],
+      "explanation": "Разница с `LAG` показывает рост или падение относительно прошлого периода."
+    },
+    {
+      "id": "a-lag-03",
+      "type": "write_query",
+      "title": "Рост в процентах",
+      "description": "Для помесячных продаж (`month`, `units`) посчитайте рост к предыдущему месяцу в процентах (`growth_pct`, округлить до 1 знака). Отсортируйте по месяцу.",
+      "difficulty": "medium",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', sale_date) AS month, SUM(quantity) AS units FROM sales GROUP BY month) SELECT month, units, ROUND(100.0 * (units - LAG(units) OVER (ORDER BY month)) / LAG(units) OVER (ORDER BY month), 1) AS growth_pct FROM m ORDER BY month",
+      "hints": ["`100.0 * (текущее − предыдущее) / предыдущее`."],
+      "explanation": "Для первого месяца рост не определён (NULL)."
+    },
+    {
+      "id": "a-lag-04",
+      "type": "write_query",
+      "title": "Интервал между заказами",
+      "description": "Для каждого заказа выведите `customer_id`, `id`, дату и количество дней с предыдущего заказа того же клиента (`days_since_prev`, целое). При одинаковой дате упорядочивайте по `id`.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "SELECT customer_id, id, order_date, CAST(julianday(order_date) - julianday(LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date, id)) AS INTEGER) AS days_since_prev FROM orders",
+      "hints": ["`PARTITION BY customer_id` — предыдущий заказ того же клиента."],
+      "explanation": "У первого заказа клиента предыдущего нет — результат NULL."
+    },
+    {
+      "id": "a-lag-05",
+      "type": "write_query",
+      "title": "Следующее повышение",
+      "description": "По таблице `salary_history` (база `employees`) для каждой записи выведите `employee_id`, дату изменения `changed_at`, зарплату и дату следующего изменения зарплаты этого сотрудника (`next_change`).",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT employee_id, changed_at, salary, LEAD(changed_at) OVER (PARTITION BY employee_id ORDER BY changed_at, id) AS next_change FROM salary_history",
+      "hints": ["`LEAD` смотрит на следующую строку."],
+      "explanation": "Пара `changed_at` / `next_change` задаёт период действия зарплаты."
+    },
+    {
+      "id": "a-lag-06",
+      "type": "write_query",
+      "title": "Первое значение",
+      "description": "Для каждой записи `salary_history` выведите `employee_id`, `changed_at`, зарплату и прирост относительно **первой** зарплаты сотрудника в истории (`growth`). Используйте `FIRST_VALUE`.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT employee_id, changed_at, salary, salary - FIRST_VALUE(salary) OVER (PARTITION BY employee_id ORDER BY changed_at, id) AS growth FROM salary_history",
+      "hints": ["`FIRST_VALUE(salary) OVER (PARTITION BY employee_id ORDER BY changed_at)`."],
+      "explanation": "`FIRST_VALUE` берёт значение из первой строки окна."
+    },
+    {
+      "id": "a-lag-07",
+      "type": "fix_bug",
+      "title": "Сосед из чужой группы",
+      "description": "Запрос должен для каждого заказа показать дату предыдущего заказа **того же клиента**, но берёт предыдущий заказ любого клиента. Исправьте.",
+      "difficulty": "easy",
+      "dataset": "ecommerce",
+      "starter": "SELECT customer_id, id, order_date,\n  LAG(order_date) OVER (ORDER BY order_date, id) AS prev_order\nFROM orders;",
+      "solution": "SELECT customer_id, id, order_date, LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date, id) AS prev_order FROM orders",
+      "hints": ["Окно нужно разделить по клиентам."],
+      "explanation": "Без `PARTITION BY` «предыдущая строка» берётся из общего потока заказов."
+    },
+    {
+      "id": "a-lag-08",
+      "type": "fill_blank",
+      "title": "Значение по умолчанию",
+      "description": "Выведите помесячное количество транзакций и количество в предыдущем месяце, подставляя 0 для первого месяца.",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "template": "WITH m AS (\n  SELECT strftime('%Y-%m', tx_date) AS month, COUNT(*) AS n\n  FROM transactions GROUP BY month\n)\nSELECT month, n, {{1}}(n, 1, {{2}}) OVER (ORDER BY month) AS prev_n\nFROM m ORDER BY month;",
+      "answers": ["LAG", "0"],
+      "choices": [["LAG", "LEAD", "FIRST_VALUE"], ["0", "1", "NULL"]],
+      "hints": ["Третий аргумент `LAG` — значение по умолчанию."],
+      "explanation": "`LAG(n, 1, 0)` возвращает 0, если предыдущей строки нет."
+    }
+  ]
+}

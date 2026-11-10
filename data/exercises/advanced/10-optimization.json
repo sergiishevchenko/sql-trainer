@@ -1,0 +1,100 @@
+{
+  "module": "advanced.optimization",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "a-opt-01",
+      "type": "explain_query",
+      "title": "Функция над столбцом",
+      "description": "На `customers(email)` есть индекс. Почему этот запрос не сможет его использовать?",
+      "difficulty": "medium",
+      "sql": "SELECT id FROM customers\nWHERE lower(email) = 'anna.ivanova@mail.ru';",
+      "options": [
+        "Индекс хранит значения `email`, а не `lower(email)`: при функции над столбцом СУБД вынуждена вычислить её для каждой строки",
+        "Индексы не работают со строками",
+        "Функция `lower` запрещена в `WHERE`",
+        "Индекс используется, просто запрос медленный из-за `SELECT id`"
+      ],
+      "correct": 0,
+      "hints": ["Подумайте, какие значения лежат в индексе."],
+      "explanation": "Условие должно быть «sargable»: столбец без обёрток сравнивается с константой. Иначе нужен индекс по выражению."
+    },
+    {
+      "id": "a-opt-02",
+      "type": "write_query",
+      "title": "Диапазон вместо функции",
+      "description": "Выведите `id` и `order_date` заказов за 2023 год. Используйте диапазон дат (`>=` и `<`) вместо функций над `order_date` — так условие сможет использовать индекс. Отсортируйте по `id`.",
+      "difficulty": "easy",
+      "solution": "SELECT id, order_date FROM orders WHERE order_date >= '2023-01-01' AND order_date < '2024-01-01' ORDER BY id",
+      "alt": ["SELECT id, order_date FROM orders WHERE order_date BETWEEN '2023-01-01' AND '2023-12-31' ORDER BY id"],
+      "hints": ["`order_date >= '2023-01-01' AND order_date < '2024-01-01'`."],
+      "explanation": "Полуоткрытый диапазон корректно работает и для дат со временем и не мешает индексу."
+    },
+    {
+      "id": "a-opt-03",
+      "type": "write_query",
+      "title": "JOIN вместо подзапроса в SELECT",
+      "description": "Выведите имя клиента и количество его заказов (`orders_count`, 0 если заказов нет). Вместо коррелированного подзапроса в `SELECT` используйте `LEFT JOIN` и `GROUP BY`. Отсортируйте по `id` клиента.",
+      "difficulty": "medium",
+      "solution": "SELECT c.first_name, COUNT(o.id) AS orders_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.first_name ORDER BY c.id",
+      "alt": ["SELECT c.first_name, (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS orders_count FROM customers c ORDER BY c.id"],
+      "hints": ["`COUNT(o.id)` не считает NULL из `LEFT JOIN`."],
+      "explanation": "Соединение с группировкой выполняется за один проход, а коррелированный подзапрос — для каждой строки."
+    },
+    {
+      "id": "a-opt-04",
+      "type": "fix_bug",
+      "title": "Размножение строк",
+      "description": "Запрос должен вывести для каждого клиента с заказами количество его **заказов**, но из-за соединения с позициями заказов считает позиции. Исправьте.",
+      "difficulty": "medium",
+      "starter": "SELECT c.id, COUNT(*) AS orders_count\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nJOIN order_items oi ON oi.order_id = o.id\nGROUP BY c.id;",
+      "solution": "SELECT c.id, COUNT(DISTINCT o.id) AS orders_count FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items oi ON oi.order_id = o.id GROUP BY c.id",
+      "alt": ["SELECT c.id, COUNT(*) AS orders_count FROM customers c JOIN orders o ON o.customer_id = c.id WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id) GROUP BY c.id"],
+      "hints": ["Каждая позиция заказа порождает отдельную строку.", "`COUNT(DISTINCT o.id)` или уберите лишнее соединение."],
+      "explanation": "Лишние соединения не только замедляют запрос, но и искажают агрегаты."
+    },
+    {
+      "id": "a-opt-05",
+      "type": "write_query",
+      "title": "Top-N с LIMIT",
+      "description": "Выведите 5 самых дорогих товаров (`name`, `price`), при равной цене — по `id`. Ограничьте выборку в самом запросе, а не в приложении.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products ORDER BY price DESC, id LIMIT 5",
+      "hints": ["`ORDER BY … LIMIT 5`."],
+      "explanation": "С `LIMIT` СУБД может остановиться раньше и не передавать лишние строки."
+    },
+    {
+      "id": "a-opt-06",
+      "type": "choose_query",
+      "title": "Клиенты без заказов",
+      "description": "Какой запрос корректно находит клиентов без заказов и позволяет СУБД остановить поиск по каждому клиенту на первом найденном заказе?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT id FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)",
+        "SELECT c.id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id",
+        "SELECT id FROM customers c WHERE (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) > 0",
+        "SELECT c.id FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL"
+      ],
+      "correct": 0,
+      "hints": ["`NOT EXISTS` прекращает поиск после первого совпадения."],
+      "explanation": "Anti-join через `NOT EXISTS` корректен с NULL и эффективен."
+    },
+    {
+      "id": "a-opt-07",
+      "type": "explain_query",
+      "title": "Лишние столбцы",
+      "description": "Почему в рабочих запросах рекомендуют перечислять нужные столбцы вместо `SELECT *`?",
+      "difficulty": "easy",
+      "sql": "SELECT *\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id;",
+      "options": [
+        "Меньше данных читается и передаётся, возможны покрывающие индексы, а запрос не ломается при изменении схемы",
+        "`SELECT *` запрещён стандартом SQL",
+        "`SELECT *` всегда возвращает строки в случайном порядке",
+        "С `SELECT *` нельзя использовать `JOIN`"
+      ],
+      "correct": 0,
+      "hints": ["Подумайте об объёме данных и об индексах."],
+      "explanation": "Явный список столбцов — это и производительность, и устойчивость к изменениям схемы."
+    }
+  ]
+}

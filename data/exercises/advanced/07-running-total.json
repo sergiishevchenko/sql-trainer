@@ -1,0 +1,129 @@
+{
+  "module": "advanced.running-total",
+  "dataset": "banking",
+  "exercises": [
+    {
+      "id": "a-run-01",
+      "type": "write_query",
+      "title": "Баланс счёта по шагам",
+      "description": "Для счёта с `account_id = 1` выведите дату, сумму транзакции и нарастающий итог `running` (в порядке даты, затем `id`).",
+      "difficulty": "easy",
+      "solution": "SELECT tx_date, amount, SUM(amount) OVER (ORDER BY tx_date, id) AS running FROM transactions WHERE account_id = 1",
+      "hints": [
+        "`SUM(amount) OVER (ORDER BY tx_date, id)`."
+      ],
+      "explanation": "С `ORDER BY` окно охватывает строки от начала до текущей."
+    },
+    {
+      "id": "a-run-02",
+      "type": "write_query",
+      "title": "Итог по каждому счёту",
+      "description": "Для всех транзакций выведите `account_id`, дату, сумму и нарастающий итог внутри счёта (`running`), в порядке даты, затем `id`.",
+      "difficulty": "easy",
+      "solution": "SELECT account_id, tx_date, amount, SUM(amount) OVER (PARTITION BY account_id ORDER BY tx_date, id) AS running FROM transactions",
+      "hints": [
+        "Добавьте `PARTITION BY account_id`."
+      ],
+      "explanation": "Нарастающий итог начинается заново для каждого счёта."
+    },
+    {
+      "id": "a-run-03",
+      "type": "write_query",
+      "title": "Накопленные продажи",
+      "description": "Посчитайте количество проданных единиц по месяцам (`month`, `units`) и накопленный итог с начала года (`ytd`). Отсортируйте по месяцу.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', sale_date) AS month, SUM(quantity) AS units FROM sales GROUP BY month) SELECT month, units, SUM(units) OVER (ORDER BY month) AS ytd FROM m ORDER BY month",
+      "hints": [
+        "Сначала агрегат по месяцам, затем нарастающий итог."
+      ],
+      "explanation": "YTD (year to date) — классический нарастающий итог по периодам."
+    },
+    {
+      "id": "a-run-04",
+      "type": "write_query",
+      "title": "Скользящее среднее",
+      "description": "Для помесячных продаж (`month`, `units`) посчитайте скользящее среднее за текущий и два предыдущих месяца (`ma3`, округлить до 2 знаков). Отсортируйте по месяцу.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', sale_date) AS month, SUM(quantity) AS units FROM sales GROUP BY month) SELECT month, units, ROUND(AVG(units) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS ma3 FROM m ORDER BY month",
+      "hints": [
+        "Рамка: `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW`."
+      ],
+      "explanation": "Скользящее среднее сглаживает колебания и показывает тренд."
+    },
+    {
+      "id": "a-run-05",
+      "type": "write_query",
+      "title": "Доля накопленной выручки",
+      "description": "Отсортируйте товары интернет-магазина по выручке (`SUM(quantity * unit_price)`) по убыванию (при равенстве — по `product_id`) и посчитайте накопленную долю выручки в процентах (`cum_pct`, округлить до 1 знака). Выведите `product_id`, `revenue`, `cum_pct`. Отсортируйте по выручке по убыванию, затем по `product_id`.",
+      "difficulty": "hard",
+      "dataset": "ecommerce",
+      "solution": "WITH r AS (SELECT product_id, SUM(quantity * unit_price) AS revenue FROM order_items GROUP BY product_id) SELECT product_id, revenue, ROUND(100.0 * SUM(revenue) OVER (ORDER BY revenue DESC, product_id) / SUM(revenue) OVER (), 1) AS cum_pct FROM r ORDER BY revenue DESC, product_id",
+      "hints": [
+        "Нарастающая сумма делится на общую сумму `SUM(revenue) OVER ()`."
+      ],
+      "explanation": "Накопленная доля — основа ABC-анализа (принцип Парето)."
+    },
+    {
+      "id": "a-run-06",
+      "type": "fix_bug",
+      "title": "Одинаковые итоги",
+      "description": "Нарастающий итог по счёту 1 должен расти на каждой строке, но у транзакций одного месяца он одинаковый. Сделайте порядок в окне однозначным, добавив `id` в сортировку окна.",
+      "difficulty": "hard",
+      "starter": "SELECT id, tx_date, amount,\n  SUM(amount) OVER (ORDER BY substr(tx_date, 1, 7)) AS running\nFROM transactions\nWHERE account_id = 1;",
+      "solution": "SELECT id, tx_date, amount, SUM(amount) OVER (ORDER BY substr(tx_date, 1, 7), id) AS running FROM transactions WHERE account_id = 1",
+      "hints": [
+        "По умолчанию рамка `RANGE` объединяет строки с равным ключом сортировки.",
+        "Добавьте `id` вторым ключом сортировки окна."
+      ],
+      "explanation": "При равных ключах сортировки рамка по умолчанию включает все «равные» строки. Уникальный ключ делает итог построчным."
+    },
+    {
+      "id": "a-run-07",
+      "type": "predict_result",
+      "title": "Последний нарастающий итог",
+      "description": "Какое значение будет в последней строке столбца `running`?",
+      "difficulty": "easy",
+      "sql": "SELECT MAX(running) FROM (\n  SELECT SUM(x) OVER (ORDER BY x) AS running\n  FROM (SELECT 1 AS x UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4)\n);",
+      "ask": "value",
+      "options": [
+        "10",
+        "4",
+        "6"
+      ],
+      "hints": [
+        "Последняя строка содержит сумму всех значений."
+      ],
+      "explanation": "1, 3, 6, 10 — максимум равен общей сумме."
+    },
+    {
+      "id": "a-run-08",
+      "type": "fill_blank",
+      "title": "Рамка окна",
+      "description": "Посчитайте сумму текущей и следующей транзакции счёта 3 (в порядке даты, затем `id`).",
+      "difficulty": "medium",
+      "template": "SELECT id, amount,\n  SUM(amount) OVER (ORDER BY tx_date, id ROWS BETWEEN {{1}} AND {{2}}) AS pair_sum\nFROM transactions\nWHERE account_id = 3;",
+      "answers": [
+        "CURRENT ROW",
+        "1 FOLLOWING"
+      ],
+      "choices": [
+        [
+          "CURRENT ROW",
+          "1 PRECEDING",
+          "UNBOUNDED PRECEDING"
+        ],
+        [
+          "1 FOLLOWING",
+          "CURRENT ROW",
+          "UNBOUNDED FOLLOWING"
+        ]
+      ],
+      "hints": [
+        "От текущей строки до одной следующей."
+      ],
+      "explanation": "Рамку можно направить вперёд: `CURRENT ROW` … `1 FOLLOWING`."
+    }
+  ]
+}

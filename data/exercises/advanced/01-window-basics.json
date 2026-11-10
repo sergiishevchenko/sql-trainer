@@ -1,0 +1,102 @@
+{
+  "module": "advanced.window-basics",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "a-win-01",
+      "type": "write_query",
+      "title": "Средняя по компании рядом",
+      "description": "Выведите имя, зарплату и среднюю зарплату по компании (`company_avg`, округлить до целого) в каждой строке. Используйте оконную функцию.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, salary, ROUND(AVG(salary) OVER ()) AS company_avg FROM employees",
+      "alt": ["SELECT first_name, salary, ROUND((SELECT AVG(salary) FROM employees)) AS company_avg FROM employees"],
+      "hints": ["`AVG(salary) OVER ()` — среднее по всем строкам без схлопывания."],
+      "explanation": "Пустое окно `OVER ()` охватывает весь результат, но каждая строка сохраняется."
+    },
+    {
+      "id": "a-win-02",
+      "type": "write_query",
+      "title": "Доля в фонде оплаты",
+      "description": "Выведите имя, зарплату и долю зарплаты сотрудника в общем фонде оплаты труда в процентах (`share_pct`, округлить до 2 знаков). Отсортируйте по доле по убыванию, затем по имени.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, salary, ROUND(100.0 * salary / SUM(salary) OVER (), 2) AS share_pct FROM employees ORDER BY share_pct DESC, first_name",
+      "hints": ["`SUM(salary) OVER ()` — общий фонд в каждой строке."],
+      "explanation": "Оконная сумма позволяет посчитать долю без подзапроса."
+    },
+    {
+      "id": "a-win-03",
+      "type": "write_query",
+      "title": "Отклонение от среднего",
+      "description": "В базе фильмов выведите название, рейтинг и разницу между рейтингом фильма и средним рейтингом всех фильмов (`diff`, округлить до 2 знаков). Отсортируйте по `diff` по убыванию, затем по названию.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, rating, ROUND(rating - AVG(rating) OVER (), 2) AS diff FROM movies ORDER BY diff DESC, title",
+      "hints": ["Вычтите `AVG(rating) OVER ()` из рейтинга."],
+      "explanation": "Окно позволяет сравнивать каждую строку с агрегатом по всему набору."
+    },
+    {
+      "id": "a-win-04",
+      "type": "write_query",
+      "title": "Доля статусов",
+      "description": "Посчитайте количество заказов по статусам и долю каждого статуса в процентах (`pct`, округлить до 1 знака). Используйте оконную функцию поверх `GROUP BY`. Отсортируйте по количеству по убыванию, затем по статусу.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "SELECT status, COUNT(*) AS n, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct FROM orders GROUP BY status ORDER BY n DESC, status",
+      "hints": ["`SUM(COUNT(*)) OVER ()` — сумма агрегатов по всем группам."],
+      "explanation": "Оконные функции вычисляются после `GROUP BY`, поэтому могут работать с агрегатами."
+    },
+    {
+      "id": "a-win-05",
+      "type": "write_query",
+      "title": "Фильтр по окну",
+      "description": "Выведите товары, цена которых больше средней цены всех товаров более чем в 2 раза: название, цена, средняя цена (`avg_price`, округлить до 2 знаков). Оконную функцию посчитайте в подзапросе или CTE.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "SELECT name, price, ROUND(avg_price, 2) AS avg_price FROM (SELECT name, price, AVG(price) OVER () AS avg_price FROM products) WHERE price > 2 * avg_price",
+      "alt": ["WITH t AS (SELECT name, price, AVG(price) OVER () AS avg_price FROM products) SELECT name, price, ROUND(avg_price, 2) AS avg_price FROM t WHERE price > 2 * avg_price"],
+      "hints": ["Оконные функции нельзя использовать в `WHERE` — оберните запрос."],
+      "explanation": "Фильтрация по результату оконной функции требует ещё одного уровня запроса."
+    },
+    {
+      "id": "a-win-06",
+      "type": "fix_bug",
+      "title": "Окно в WHERE",
+      "description": "Запрос должен вывести сотрудников с зарплатой выше средней, но падает с ошибкой. Исправьте, сохранив оконную функцию.",
+      "difficulty": "medium",
+      "starter": "SELECT first_name, salary\nFROM employees\nWHERE salary > AVG(salary) OVER ();",
+      "solution": "SELECT first_name, salary FROM (SELECT first_name, salary, AVG(salary) OVER () AS avg_salary FROM employees) WHERE salary > avg_salary",
+      "alt": ["SELECT first_name, salary FROM employees WHERE salary > (SELECT AVG(salary) FROM employees)"],
+      "hints": ["Посчитайте окно во внутреннем запросе, а сравните во внешнем."],
+      "explanation": "Оконные функции вычисляются после `WHERE`, поэтому там они недоступны."
+    },
+    {
+      "id": "a-win-07",
+      "type": "predict_result",
+      "title": "Строк после окна",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT name, COUNT(*) OVER () AS total FROM departments;",
+      "ask": "rowCount",
+      "options": ["1", "8", "0"],
+      "hints": ["Оконная функция не схлопывает строки."],
+      "explanation": "В отличие от `COUNT(*)` без окна, здесь каждая из 8 строк сохраняется."
+    },
+    {
+      "id": "a-win-08",
+      "type": "explain_query",
+      "title": "GROUP BY против окна",
+      "description": "Чем отличаются результаты двух запросов: `SELECT department_id, AVG(salary) FROM employees GROUP BY department_id` и запроса ниже?",
+      "difficulty": "medium",
+      "sql": "SELECT department_id, AVG(salary) OVER (PARTITION BY department_id)\nFROM employees;",
+      "options": [
+        "Оконный вариант вернёт строку на каждого сотрудника с повторяющимся средним по его отделу",
+        "Результаты полностью совпадают",
+        "Оконный вариант вернёт одну строку на отдел",
+        "Оконный вариант вернёт среднее по всей компании"
+      ],
+      "correct": 0,
+      "hints": ["Окно не уменьшает количество строк."],
+      "explanation": "`PARTITION BY` считает агрегат по отделу, но строка каждого сотрудника остаётся в результате."
+    }
+  ]
+}

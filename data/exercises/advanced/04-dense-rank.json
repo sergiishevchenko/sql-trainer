@@ -1,0 +1,96 @@
+{
+  "module": "advanced.dense-rank",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "a-dense-01",
+      "type": "write_query",
+      "title": "Уровни зарплат",
+      "description": "Выведите имя, зарплату и уровень зарплаты `salary_level` (`DENSE_RANK` по убыванию зарплаты).",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS salary_level FROM employees",
+      "hints": ["`DENSE_RANK()` не оставляет пропусков."],
+      "explanation": "Одинаковые зарплаты получают один уровень, а следующий уровень идёт без пропуска."
+    },
+    {
+      "id": "a-dense-02",
+      "type": "write_query",
+      "title": "Вторая по величине зарплата",
+      "description": "Выведите вторую по величине **различную** зарплату в компании (одно число).",
+      "difficulty": "medium",
+      "solution": "SELECT DISTINCT salary FROM (SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS dr FROM employees) WHERE dr = 2",
+      "alt": ["SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees)", "SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1"],
+      "hints": ["`DENSE_RANK() = 2` — второе различное значение."],
+      "explanation": "`DENSE_RANK` корректно работает, даже если максимальная зарплата встречается несколько раз."
+    },
+    {
+      "id": "a-dense-03",
+      "type": "write_query",
+      "title": "Три уровня цен в категории",
+      "description": "Для каждой категории товаров выведите товары с тремя самыми высокими **различными** ценами в категории: `category_id`, название, цена. Товары без категории не нужны. Отсортируйте по категории, затем по цене по убыванию, затем по названию.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "WITH r AS (SELECT category_id, name, price, DENSE_RANK() OVER (PARTITION BY category_id ORDER BY price DESC) AS dr FROM products WHERE category_id IS NOT NULL) SELECT category_id, name, price FROM r WHERE dr <= 3 ORDER BY category_id, price DESC, name",
+      "hints": ["`DENSE_RANK` с `PARTITION BY category_id`."],
+      "explanation": "Если два товара стоят одинаково, они займут один уровень, и в топ попадут три различные цены."
+    },
+    {
+      "id": "a-dense-04",
+      "type": "write_query",
+      "title": "Квартили цен",
+      "description": "Разбейте товары на 4 группы по возрастанию цены (при равенстве — по `id`) с помощью `NTILE`. Выведите название, цену и номер квартиля `quartile`.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "SELECT name, price, NTILE(4) OVER (ORDER BY price, id) AS quartile FROM products",
+      "hints": ["`NTILE(4) OVER (ORDER BY …)`."],
+      "explanation": "`NTILE` делит упорядоченные строки на почти равные группы."
+    },
+    {
+      "id": "a-dense-05",
+      "type": "write_query",
+      "title": "Сравнение функций ранжирования",
+      "description": "Для фильмов выведите название, рейтинг и три столбца по убыванию рейтинга: `rn` (ROW_NUMBER, при равенстве по `id`), `rk` (RANK), `drk` (DENSE_RANK). Отсортируйте по `rn`.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, rating, ROW_NUMBER() OVER (ORDER BY rating DESC, id) AS rn, RANK() OVER (ORDER BY rating DESC) AS rk, DENSE_RANK() OVER (ORDER BY rating DESC) AS drk FROM movies ORDER BY rn",
+      "hints": ["В одном запросе можно использовать несколько окон."],
+      "explanation": "На одних данных видно, чем отличаются три функции ранжирования."
+    },
+    {
+      "id": "a-dense-06",
+      "type": "fix_bug",
+      "title": "Неправильная вторая зарплата",
+      "description": "Запрос должен найти сотрудников со второй по величине различной зарплатой в своём отделе, но использует `ROW_NUMBER` и ошибается при равных зарплатах. Исправьте функцию.",
+      "difficulty": "medium",
+      "starter": "SELECT department_id, first_name, salary FROM (\n  SELECT department_id, first_name, salary,\n    ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC, id) AS r\n  FROM employees\n) WHERE r = 2;",
+      "solution": "SELECT department_id, first_name, salary FROM (SELECT department_id, first_name, salary, DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS r FROM employees) WHERE r = 2",
+      "hints": ["Нужно «второе различное значение»."],
+      "explanation": "`ROW_NUMBER` даёт номер 2 второму сотруднику, даже если его зарплата равна максимальной."
+    },
+    {
+      "id": "a-dense-07",
+      "type": "predict_result",
+      "title": "Значение DENSE_RANK",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT MAX(r) FROM (\n  SELECT DENSE_RANK() OVER (ORDER BY v DESC) AS r\n  FROM (SELECT 10 AS v UNION ALL SELECT 9 UNION ALL SELECT 9 UNION ALL SELECT 8)\n);",
+      "ask": "value",
+      "options": ["3", "4", "2"],
+      "hints": ["Различных значений три."],
+      "explanation": "10 → 1, 9 → 2, 9 → 2, 8 → 3. `DENSE_RANK` не пропускает места."
+    },
+    {
+      "id": "a-dense-08",
+      "type": "fill_blank",
+      "title": "Децили продаж",
+      "description": "Разбейте продажи на 10 групп по количеству единиц (по убыванию, при равенстве — по `id`).",
+      "difficulty": "easy",
+      "dataset": "sales",
+      "template": "SELECT id, quantity,\n  {{1}}(10) OVER (ORDER BY quantity DESC, id) AS decile\nFROM sales;",
+      "answers": ["NTILE"],
+      "choices": [["NTILE", "RANK", "DENSE_RANK", "ROW_NUMBER"]],
+      "hints": ["Функция, которая делит строки на N групп."],
+      "explanation": "`NTILE(10)` присваивает номер дециля от 1 до 10."
+    }
+  ]
+}

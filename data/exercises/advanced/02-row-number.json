@@ -1,0 +1,98 @@
+{
+  "module": "advanced.row-number",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "a-rn-01",
+      "type": "write_query",
+      "title": "Нумерация по зарплате",
+      "description": "Пронумеруйте сотрудников по убыванию зарплаты (при равенстве — по `id`). Выведите `rn`, имя и зарплату.",
+      "difficulty": "easy",
+      "solution": "SELECT ROW_NUMBER() OVER (ORDER BY salary DESC, id) AS rn, first_name, salary FROM employees",
+      "hints": ["`ROW_NUMBER() OVER (ORDER BY …)`."],
+      "explanation": "Тай-брейкер `id` делает нумерацию детерминированной."
+    },
+    {
+      "id": "a-rn-02",
+      "type": "write_query",
+      "title": "Нумерация в отделе",
+      "description": "Пронумеруйте сотрудников внутри каждого отдела по убыванию зарплаты (при равенстве — по `id`). Выведите `department_id`, имя, зарплату и `rn`. Сотрудника без отдела не учитывайте.",
+      "difficulty": "easy",
+      "solution": "SELECT department_id, first_name, salary, ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC, id) AS rn FROM employees WHERE department_id IS NOT NULL",
+      "hints": ["`PARTITION BY department_id` начинает нумерацию заново в каждом отделе."],
+      "explanation": "Партиции делают нумерацию локальной для группы."
+    },
+    {
+      "id": "a-rn-03",
+      "type": "write_query",
+      "title": "Топ-2 в каждом отделе",
+      "description": "Выведите двух самых высокооплачиваемых сотрудников каждого отдела (при равенстве — меньший `id`): `department_id`, имя, зарплата. Сотрудника без отдела не учитывайте. Отсортируйте по `department_id`, затем по зарплате по убыванию.",
+      "difficulty": "medium",
+      "solution": "WITH r AS (SELECT department_id, first_name, salary, id, ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary DESC, id) AS rn FROM employees WHERE department_id IS NOT NULL) SELECT department_id, first_name, salary FROM r WHERE rn <= 2 ORDER BY department_id, salary DESC, id",
+      "hints": ["Посчитайте `ROW_NUMBER` в CTE, затем отфильтруйте `rn <= 2`."],
+      "explanation": "«Top-N в группе» — главный сценарий применения `ROW_NUMBER`."
+    },
+    {
+      "id": "a-rn-04",
+      "type": "write_query",
+      "title": "Последний заказ клиента",
+      "description": "Для каждого клиента, у которого есть заказы, выведите его последний заказ: `customer_id`, `id` заказа и дату. При одинаковой дате берите больший `id`. Отсортируйте по `customer_id`.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "WITH r AS (SELECT customer_id, id, order_date, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC, id DESC) AS rn FROM orders) SELECT customer_id, id, order_date FROM r WHERE rn = 1 ORDER BY customer_id",
+      "hints": ["Нумеруйте заказы клиента от новых к старым и оставьте первый."],
+      "explanation": "`ROW_NUMBER` с `rn = 1` — универсальный способ выбрать одну строку на группу."
+    },
+    {
+      "id": "a-rn-05",
+      "type": "write_query",
+      "title": "Лучший фильм каждого жанра",
+      "description": "Для каждого жанра выведите название жанра и самый высокорейтинговый фильм (при равенстве — более новый, затем меньший `id`). Отсортируйте по названию жанра.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "WITH r AS (SELECT genre_id, title, ROW_NUMBER() OVER (PARTITION BY genre_id ORDER BY rating DESC, release_year DESC, id) AS rn FROM movies) SELECT g.name, r.title FROM r JOIN genres g ON g.id = r.genre_id WHERE r.rn = 1 ORDER BY g.name",
+      "hints": ["Нумеруйте внутри жанра, затем соедините с `genres`."],
+      "explanation": "Окно и соединение комбинируются: сначала выбираем строку, затем подтягиваем справочник."
+    },
+    {
+      "id": "a-rn-06",
+      "type": "write_query",
+      "title": "Дедупликация отзывов",
+      "description": "Некоторые клиенты оставили несколько отзывов. Для каждой пары (клиент, товар) оставьте только самый свежий отзыв (при равной дате — с большим `id`). Выведите `customer_id`, `product_id`, `rating`, `created_at`.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "WITH r AS (SELECT customer_id, product_id, rating, created_at, ROW_NUMBER() OVER (PARTITION BY customer_id, product_id ORDER BY created_at DESC, id DESC) AS rn FROM reviews) SELECT customer_id, product_id, rating, created_at FROM r WHERE rn = 1",
+      "hints": ["Партиция по двум столбцам: `PARTITION BY customer_id, product_id`."],
+      "explanation": "Дедупликация по составному ключу — частая задача очистки данных."
+    },
+    {
+      "id": "a-rn-07",
+      "type": "fix_bug",
+      "title": "Нумерация без партиции",
+      "description": "Запрос должен пронумеровать фильмы **внутри каждого режиссёра** по году выпуска (при равенстве — по `id`), но нумерация сквозная. Исправьте.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "starter": "SELECT director_id, title,\n  ROW_NUMBER() OVER (ORDER BY release_year, id) AS film_no\nFROM movies;",
+      "solution": "SELECT director_id, title, ROW_NUMBER() OVER (PARTITION BY director_id ORDER BY release_year, id) AS film_no FROM movies",
+      "hints": ["Не хватает `PARTITION BY`."],
+      "explanation": "Без партиции окно охватывает все строки, и нумерация не сбрасывается."
+    },
+    {
+      "id": "a-rn-08",
+      "type": "choose_query",
+      "title": "Третий по цене",
+      "description": "Какой запрос выведет название товара, который стоит на третьем месте по убыванию цены (при равенстве цен — по названию)?",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "options": [
+        "SELECT name FROM (SELECT name, ROW_NUMBER() OVER (ORDER BY price DESC, name) AS rn FROM products) WHERE rn = 3",
+        "SELECT name FROM (SELECT name, ROW_NUMBER() OVER (ORDER BY price, name) AS rn FROM products) WHERE rn = 3",
+        "SELECT name FROM products WHERE ROW_NUMBER() OVER (ORDER BY price DESC) = 3",
+        "SELECT name FROM (SELECT name, ROW_NUMBER() OVER (PARTITION BY price ORDER BY name) AS rn FROM products) WHERE rn = 3"
+      ],
+      "correct": 0,
+      "hints": ["Окно нельзя использовать в `WHERE` того же уровня."],
+      "explanation": "Номер считается во внутреннем запросе по убыванию цены, а фильтр — во внешнем."
+    }
+  ]
+}

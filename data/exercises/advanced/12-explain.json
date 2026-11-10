@@ -1,0 +1,115 @@
+{
+  "module": "advanced.explain",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "a-expl-01",
+      "type": "write_query",
+      "title": "Посмотреть план",
+      "description": "Получите план выполнения запроса `SELECT * FROM orders WHERE customer_id = 5` с помощью `EXPLAIN QUERY PLAN`.",
+      "difficulty": "easy",
+      "solution": "EXPLAIN QUERY PLAN SELECT * FROM orders WHERE customer_id = 5",
+      "hints": ["Поставьте `EXPLAIN QUERY PLAN` перед запросом."],
+      "explanation": "Без индекса по `customer_id` план показывает `SCAN orders` — полный просмотр таблицы."
+    },
+    {
+      "id": "a-expl-02",
+      "type": "explain_query",
+      "title": "SCAN в плане",
+      "description": "План запроса содержит строку `SCAN orders`. Что это значит?",
+      "difficulty": "easy",
+      "sql": "EXPLAIN QUERY PLAN\nSELECT * FROM orders WHERE status = 'shipped';",
+      "options": [
+        "СУБД читает все строки таблицы и проверяет условие для каждой",
+        "СУБД нашла строки по индексу",
+        "Запрос вернёт пустой результат",
+        "Таблица заблокирована на время запроса"
+      ],
+      "correct": 0,
+      "hints": ["SCAN — полный проход."],
+      "explanation": "`SCAN` — полный просмотр. Для больших таблиц это сигнал подумать об индексе."
+    },
+    {
+      "id": "a-expl-03",
+      "type": "explain_query",
+      "title": "SEARCH USING INDEX",
+      "description": "После создания индекса план показывает `SEARCH orders USING INDEX idx_orders_customer (customer_id=?)`. Что это значит?",
+      "difficulty": "medium",
+      "sql": "CREATE INDEX idx_orders_customer ON orders(customer_id);\nEXPLAIN QUERY PLAN\nSELECT * FROM orders WHERE customer_id = 5;",
+      "options": [
+        "СУБД находит нужные строки по индексу, не просматривая всю таблицу",
+        "СУБД просматривает весь индекс и всю таблицу",
+        "Индекс создан, но не используется",
+        "Запрос выполнится без обращения к таблице вообще"
+      ],
+      "correct": 0,
+      "hints": ["SEARCH — точечный поиск."],
+      "explanation": "`SEARCH … USING INDEX` — поиск по индексу. В скобках указано условие, которое индекс обслуживает."
+    },
+    {
+      "id": "a-expl-04",
+      "type": "explain_query",
+      "title": "Временное B-дерево",
+      "description": "План содержит `USE TEMP B-TREE FOR ORDER BY`. О чём это говорит?",
+      "difficulty": "medium",
+      "sql": "EXPLAIN QUERY PLAN\nSELECT * FROM products ORDER BY price DESC;",
+      "options": [
+        "Для сортировки СУБД строит временную структуру, потому что нет индекса в нужном порядке",
+        "Результат будет без сортировки",
+        "СУБД создала постоянный индекс по `price`",
+        "Запрос завершится ошибкой на больших таблицах"
+      ],
+      "correct": 0,
+      "hints": ["TEMP — значит временное, только на время запроса."],
+      "explanation": "Индекс по столбцу сортировки позволяет читать строки сразу в нужном порядке без дополнительной сортировки."
+    },
+    {
+      "id": "a-expl-05",
+      "type": "explain_query",
+      "title": "Покрывающий индекс",
+      "description": "План показывает `SEARCH orders USING COVERING INDEX idx_orders_customer_date (customer_id=?)`. Чем «покрывающий» индекс лучше обычного?",
+      "difficulty": "hard",
+      "sql": "CREATE INDEX idx_orders_customer_date ON orders(customer_id, order_date);\nEXPLAIN QUERY PLAN\nSELECT order_date FROM orders WHERE customer_id = 5;",
+      "options": [
+        "Все нужные запросу столбцы есть в индексе, поэтому обращаться к самой таблице не нужно",
+        "Индекс покрывает все таблицы базы",
+        "Индекс автоматически обновляет статистику",
+        "Индекс хранит результат запроса в кэше"
+      ],
+      "correct": 0,
+      "hints": ["Какие столбцы нужны запросу и какие есть в индексе?"],
+      "explanation": "Покрывающий индекс отвечает на запрос сам, без чтения строк таблицы."
+    },
+    {
+      "id": "a-expl-06",
+      "type": "write_query",
+      "title": "Из SCAN в SEARCH",
+      "description": "План запроса `SELECT order_id, quantity FROM order_items WHERE product_id = 3` показывает `SCAN order_items`. Создайте индекс, после которого план покажет `SEARCH`: первым столбцом индекса должен быть `product_id`.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_items_product ON order_items(product_id)",
+      "alt": ["CREATE INDEX idx_items_product_qty ON order_items(product_id, order_id, quantity)"],
+      "check": "SELECT EXISTS (SELECT 1 FROM sqlite_master m WHERE m.type = 'index' AND m.tbl_name = 'order_items' AND (SELECT name FROM pragma_index_info(m.name) WHERE seqno = 0) = 'product_id') AS uses_product_index",
+      "hints": ["`CREATE INDEX … ON order_items(product_id)`."],
+      "explanation": "Индекс, начинающийся с `product_id`, позволяет искать строки по этому столбцу без полного просмотра."
+    },
+    {
+      "id": "a-expl-07",
+      "type": "explain_query",
+      "title": "EXPLAIN или EXPLAIN QUERY PLAN",
+      "description": "Чем `EXPLAIN QUERY PLAN` отличается от простого `EXPLAIN` в SQLite?",
+      "difficulty": "medium",
+      "sql": "EXPLAIN QUERY PLAN\nSELECT name FROM products WHERE price > 100;",
+      "options": [
+        "`EXPLAIN QUERY PLAN` показывает высокоуровневый план (SCAN/SEARCH, индексы), а `EXPLAIN` — низкоуровневую программу виртуальной машины",
+        "Ничем, это синонимы",
+        "`EXPLAIN` выполняет запрос, а `EXPLAIN QUERY PLAN` — нет",
+        "`EXPLAIN QUERY PLAN` работает только для INSERT"
+      ],
+      "correct": 0,
+      "hints": ["Один вывод читается человеком, другой — набор опкодов."],
+      "explanation": "Для анализа производительности практически всегда используют `EXPLAIN QUERY PLAN`."
+    }
+  ]
+}

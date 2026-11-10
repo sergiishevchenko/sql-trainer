@@ -1,0 +1,125 @@
+{
+  "module": "advanced.cte-advanced",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "a-cte-01",
+      "type": "write_query",
+      "title": "Сегменты клиентов",
+      "description": "С помощью цепочки CTE: (1) посчитайте сумму каждого заказа, (2) выручку каждого клиента, (3) сегмент `gold` для выручки от 2000, иначе `regular`. Выведите сегмент, количество клиентов (`customers`) и среднюю выручку (`avg_revenue`, округлить до 2 знаков). Отсортируйте по сегменту.",
+      "difficulty": "medium",
+      "solution": "WITH order_totals AS (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id), customer_revenue AS (SELECT o.customer_id, SUM(t.total) AS revenue FROM orders o JOIN order_totals t ON t.order_id = o.id GROUP BY o.customer_id), segmented AS (SELECT customer_id, revenue, CASE WHEN revenue >= 2000 THEN 'gold' ELSE 'regular' END AS segment FROM customer_revenue) SELECT segment, COUNT(*) AS customers, ROUND(AVG(revenue), 2) AS avg_revenue FROM segmented GROUP BY segment ORDER BY segment",
+      "hints": [
+        "Каждый шаг — отдельная CTE.",
+        "Третья CTE использует вторую."
+      ],
+      "explanation": "Конвейер CTE раскладывает аналитику на понятные шаги."
+    },
+    {
+      "id": "a-cte-02",
+      "type": "write_query",
+      "title": "Лучший товар в категории",
+      "description": "Для каждой категории выведите название категории, самый продаваемый товар по количеству единиц (при равенстве — меньший `id` товара) и количество (`units`). Отсортируйте по названию категории.",
+      "difficulty": "hard",
+      "solution": "WITH units AS (SELECT p.category_id, p.id, p.name, SUM(oi.quantity) AS units FROM order_items oi JOIN products p ON p.id = oi.product_id WHERE p.category_id IS NOT NULL GROUP BY p.id, p.category_id, p.name), ranked AS (SELECT *, ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY units DESC, id) AS rn FROM units) SELECT c.name, r.name, r.units FROM ranked r JOIN categories c ON c.id = r.category_id WHERE r.rn = 1 ORDER BY c.name",
+      "hints": [
+        "Шаг 1: продажи по товарам. Шаг 2: ранжирование в категории. Шаг 3: фильтр и справочник."
+      ],
+      "explanation": "CTE + оконная функция — стандартный способ получить «лучший в группе»."
+    },
+    {
+      "id": "a-cte-03",
+      "type": "write_query",
+      "title": "Фонд по отделам и доля",
+      "description": "Посчитайте фонд оплаты (`payroll`) по отделам в CTE и выведите название отдела, фонд и долю отдела в общем фонде (`pct`, округлить до 1 знака), переиспользовав CTE для общего итога. Отделы без сотрудников не нужны. Отсортируйте по фонду по убыванию.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "WITH dept AS (SELECT department_id, SUM(salary) AS payroll FROM employees WHERE department_id IS NOT NULL GROUP BY department_id) SELECT d.name, dept.payroll, ROUND(100.0 * dept.payroll / (SELECT SUM(payroll) FROM dept), 1) AS pct FROM dept JOIN departments d ON d.id = dept.department_id ORDER BY dept.payroll DESC",
+      "hints": [
+        "`(SELECT SUM(payroll) FROM dept)` — переиспользование CTE."
+      ],
+      "explanation": "Одна CTE используется и как источник строк, и для расчёта итога."
+    },
+    {
+      "id": "a-cte-04",
+      "type": "write_query",
+      "title": "Повторные покупатели",
+      "description": "Найдите долю клиентов, сделавших 2 и более заказа, среди всех клиентов с заказами. Выведите `buyers`, `repeat_buyers` и `repeat_pct` (округлить до 1 знака).",
+      "difficulty": "medium",
+      "solution": "WITH per_customer AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT COUNT(*) AS buyers, SUM(n >= 2) AS repeat_buyers, ROUND(100.0 * SUM(n >= 2) / COUNT(*), 1) AS repeat_pct FROM per_customer",
+      "alt": [
+        "WITH per_customer AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT COUNT(*) AS buyers, SUM(CASE WHEN n >= 2 THEN 1 ELSE 0 END) AS repeat_buyers, ROUND(100.0 * SUM(CASE WHEN n >= 2 THEN 1 ELSE 0 END) / COUNT(*), 1) AS repeat_pct FROM per_customer"
+      ],
+      "hints": [
+        "Сначала количество заказов на клиента, затем условная агрегация."
+      ],
+      "explanation": "Repeat rate — ключевая метрика удержания клиентов."
+    },
+    {
+      "id": "a-cte-05",
+      "type": "write_query",
+      "title": "Студенты выше среднего курса",
+      "description": "Для каждой записи с оценкой выведите имя студента, код курса, оценку и среднюю оценку курса (`course_avg`, округлить до 1 знака), только если оценка студента выше средней по курсу. Отсортируйте по коду курса, затем по оценке по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "dataset": "university",
+      "solution": "WITH course_avg AS (SELECT course_id, AVG(grade) AS avg_grade FROM enrollments WHERE grade IS NOT NULL GROUP BY course_id) SELECT s.full_name, c.code, e.grade, ROUND(ca.avg_grade, 1) AS course_avg FROM enrollments e JOIN course_avg ca ON ca.course_id = e.course_id JOIN students s ON s.id = e.student_id JOIN courses c ON c.id = e.course_id WHERE e.grade > ca.avg_grade ORDER BY c.code, e.grade DESC, s.full_name",
+      "hints": [
+        "CTE со средним по курсу, затем соединение с фактами."
+      ],
+      "explanation": "Предрасчёт агрегата в CTE избавляет от коррелированного подзапроса."
+    },
+    {
+      "id": "a-cte-06",
+      "type": "fix_bug",
+      "title": "Столбец без имени",
+      "description": "Запрос падает с ошибкой `no such column: total`. Исправьте CTE так, чтобы запрос посчитал количество заказов на сумму больше 1000.",
+      "difficulty": "easy",
+      "starter": "WITH totals AS (\n  SELECT order_id, SUM(quantity * unit_price)\n  FROM order_items\n  GROUP BY order_id\n)\nSELECT COUNT(*) FROM totals WHERE total > 1000;",
+      "solution": "WITH totals AS (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id) SELECT COUNT(*) FROM totals WHERE total > 1000",
+      "hints": [
+        "У вычисляемого столбца нет имени.",
+        "Добавьте псевдоним `AS total` или список столбцов `totals(order_id, total)`."
+      ],
+      "explanation": "Снаружи CTE доступны только именованные столбцы. Имена задаются псевдонимами или списком после имени CTE.",
+      "alt": [
+        "WITH totals(order_id, total) AS (SELECT order_id, SUM(quantity * unit_price) FROM order_items GROUP BY order_id) SELECT COUNT(*) FROM totals WHERE total > 1000"
+      ]
+    },
+    {
+      "id": "a-cte-07",
+      "type": "business_case",
+      "title": "Отчёт по актёрам",
+      "description": "Продюсер просит отчёт по актёрам, снявшимся минимум в 2 фильмах: имя (`actor`), количество фильмов (`movies`), средний рейтинг этих фильмов (`avg_rating`, округлить до 2 знаков) и лучший фильм актёра по рейтингу (`best_movie`, при равенстве — более новый, затем меньший `id`). Отсортируйте по количеству фильмов по убыванию, затем по имени.",
+      "difficulty": "hard",
+      "dataset": "movies",
+      "solution": "WITH roles AS (SELECT a.id AS actor_id, a.name AS actor, m.id AS movie_id, m.title, m.rating, m.release_year FROM movie_cast mc JOIN actors a ON a.id = mc.actor_id JOIN movies m ON m.id = mc.movie_id), stats AS (SELECT actor_id, actor, COUNT(DISTINCT movie_id) AS movies, AVG(rating) AS avg_rating FROM roles GROUP BY actor_id, actor HAVING COUNT(DISTINCT movie_id) >= 2), best AS (SELECT actor_id, title, ROW_NUMBER() OVER (PARTITION BY actor_id ORDER BY rating DESC, release_year DESC, movie_id) AS rn FROM roles) SELECT s.actor, s.movies, ROUND(s.avg_rating, 2) AS avg_rating, b.title AS best_movie FROM stats s JOIN best b ON b.actor_id = s.actor_id AND b.rn = 1 ORDER BY s.movies DESC, s.actor",
+      "hints": [
+        "Шаг 1: все роли с данными фильма.",
+        "Шаг 2: статистика по актёру. Шаг 3: лучший фильм через `ROW_NUMBER`."
+      ],
+      "explanation": "Несколько CTE от одного источника позволяют собрать сложный отчёт по шагам."
+    },
+    {
+      "id": "a-cte-08",
+      "type": "order_parts",
+      "title": "Конвейер CTE",
+      "description": "Соберите запрос: средняя зарплата по отделам, затем отделы со средней выше 90 000.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "parts": [
+        "WITH dept AS (",
+        "SELECT department_id, AVG(salary) AS avg_salary FROM employees GROUP BY department_id",
+        ")",
+        "SELECT department_id, avg_salary FROM dept",
+        "WHERE avg_salary > 90000"
+      ],
+      "distractors": [
+        "HAVING avg_salary > 90000 FROM dept"
+      ],
+      "hints": [
+        "После CTE агрегат — это обычный столбец, его фильтруют в `WHERE`."
+      ],
+      "explanation": "CTE превращает агрегат в столбец, поэтому снаружи можно использовать `WHERE`."
+    }
+  ]
+}

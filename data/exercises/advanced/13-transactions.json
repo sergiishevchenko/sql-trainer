@@ -1,0 +1,140 @@
+{
+  "module": "advanced.transactions",
+  "dataset": "banking",
+  "exercises": [
+    {
+      "id": "a-tx-01",
+      "type": "write_query",
+      "title": "Перевод между счетами",
+      "description": "Переведите 1000 со счёта 1 на счёт 2 в одной транзакции: `BEGIN`, два `UPDATE` баланса, `COMMIT`.",
+      "difficulty": "easy",
+      "mode": "mutation",
+      "allow": [
+        "update",
+        "transaction"
+      ],
+      "solution": "BEGIN; UPDATE accounts SET balance = balance - 1000 WHERE id = 1; UPDATE accounts SET balance = balance + 1000 WHERE id = 2; COMMIT;",
+      "check": "SELECT id, balance FROM accounts WHERE id IN (1, 2)",
+      "hints": [
+        "Списание и зачисление — две команды в одной транзакции."
+      ],
+      "explanation": "Транзакция гарантирует атомарность: либо выполнятся обе команды, либо ни одной."
+    },
+    {
+      "id": "a-tx-02",
+      "type": "write_query",
+      "title": "Перевод с журналом",
+      "description": "В одной транзакции переведите 250 со счёта 3 на счёт 6 и запишите две операции в `transactions` с датой `2024-04-01 10:00`: для счёта 3 — сумма `-250`, тип `transfer_out`, `counterparty_account_id = 6`; для счёта 6 — сумма `250`, тип `transfer_in`, `counterparty_account_id = 3`. Описание — `Transfer`.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": [
+        "insert",
+        "update",
+        "transaction"
+      ],
+      "solution": "BEGIN; UPDATE accounts SET balance = balance - 250 WHERE id = 3; UPDATE accounts SET balance = balance + 250 WHERE id = 6; INSERT INTO transactions (account_id, tx_date, amount, tx_type, description, counterparty_account_id) VALUES (3, '2024-04-01 10:00', -250, 'transfer_out', 'Transfer', 6), (6, '2024-04-01 10:00', 250, 'transfer_in', 'Transfer', 3); COMMIT;",
+      "check": "SELECT 'balance' AS kind, id AS ref, balance AS value, NULL AS extra FROM accounts WHERE id IN (3, 6) UNION ALL SELECT tx_type, account_id, amount, counterparty_account_id FROM transactions WHERE tx_date = '2024-04-01 10:00'",
+      "hints": [
+        "Два `UPDATE` и один `INSERT` с двумя строками.",
+        "Не указывайте `id` — он назначится автоматически."
+      ],
+      "explanation": "Изменение баланса и запись в журнал должны происходить атомарно, иначе данные разойдутся."
+    },
+    {
+      "id": "a-tx-03",
+      "type": "fix_bug",
+      "title": "Деньги из ниоткуда",
+      "description": "Перевод 500 со счёта 7 на счёт 8 должен сохранять общую сумму, но оба счёта уменьшаются. Исправьте.",
+      "difficulty": "easy",
+      "mode": "mutation",
+      "allow": [
+        "update",
+        "transaction"
+      ],
+      "starter": "BEGIN;\nUPDATE accounts SET balance = balance - 500 WHERE id = 7;\nUPDATE accounts SET balance = balance - 500 WHERE id = 8;\nCOMMIT;",
+      "solution": "BEGIN; UPDATE accounts SET balance = balance - 500 WHERE id = 7; UPDATE accounts SET balance = balance + 500 WHERE id = 8; COMMIT;",
+      "check": "SELECT id, balance FROM accounts WHERE id IN (7, 8)",
+      "hints": [
+        "Получатель должен получить `+ 500`."
+      ],
+      "explanation": "Сумма балансов участников перевода до и после транзакции должна совпадать."
+    },
+    {
+      "id": "a-tx-04",
+      "type": "write_query",
+      "title": "Откат части работы",
+      "description": "В одной транзакции: начислите 100 на счёт 9, создайте точку сохранения `sp`, спишите 5000 со счёта 9, затем откатитесь к `sp` (списание оказалось ошибкой) и зафиксируйте транзакцию.",
+      "difficulty": "hard",
+      "mode": "mutation",
+      "allow": [
+        "update",
+        "transaction"
+      ],
+      "solution": "BEGIN; UPDATE accounts SET balance = balance + 100 WHERE id = 9; SAVEPOINT sp; UPDATE accounts SET balance = balance - 5000 WHERE id = 9; ROLLBACK TO sp; COMMIT;",
+      "check": "SELECT id, balance FROM accounts WHERE id = 9",
+      "hints": [
+        "`SAVEPOINT sp` … `ROLLBACK TO sp`.",
+        "После отката к точке сохранения транзакция продолжается — её нужно зафиксировать."
+      ],
+      "explanation": "Точки сохранения позволяют откатить часть транзакции, сохранив предыдущие изменения."
+    },
+    {
+      "id": "a-tx-05",
+      "type": "business_case",
+      "title": "Комиссия за низкий остаток",
+      "description": "Банк вводит комиссию 5 для открытых (`closed_at IS NULL`) счетов типа `checking` с балансом меньше 1000. В одной транзакции: (1) запишите в `transactions` операции с датой `2024-04-01 00:00`, суммой `-5`, типом `fee` и описанием `Low balance fee` для каждого такого счёта; (2) уменьшите их баланс на 5. Порядок важен: сначала журнал, потом баланс.",
+      "difficulty": "hard",
+      "mode": "mutation",
+      "allow": [
+        "insert",
+        "update",
+        "transaction"
+      ],
+      "solution": "BEGIN; INSERT INTO transactions (account_id, tx_date, amount, tx_type, description) SELECT id, '2024-04-01 00:00', -5, 'fee', 'Low balance fee' FROM accounts WHERE account_type = 'checking' AND closed_at IS NULL AND balance < 1000; UPDATE accounts SET balance = balance - 5 WHERE account_type = 'checking' AND closed_at IS NULL AND balance < 1000; COMMIT;",
+      "check": "SELECT 'fee' AS kind, account_id AS ref, amount AS value FROM transactions WHERE tx_date = '2024-04-01 00:00' AND tx_type = 'fee' UNION ALL SELECT 'balance', id, balance FROM accounts",
+      "hints": [
+        "`INSERT INTO … SELECT …` создаст строку для каждого подходящего счёта.",
+        "Если сначала уменьшить баланс, набор подходящих счетов может измениться."
+      ],
+      "explanation": "Массовые операции в транзакции с `INSERT … SELECT` — типичный приём для начислений и списаний."
+    },
+    {
+      "id": "a-tx-06",
+      "type": "explain_query",
+      "title": "Атомарность",
+      "description": "Во время выполнения транзакции ниже второй `UPDATE` завершился ошибкой, и транзакция была отменена. Что произойдёт с первым `UPDATE`?",
+      "difficulty": "medium",
+      "sql": "BEGIN;\nUPDATE accounts SET balance = balance - 1000 WHERE id = 1;\nUPDATE accounts SET balance = balance + 1000 WHERE id = 2;\nCOMMIT;",
+      "options": [
+        "Его изменения будут отменены: транзакция выполняется целиком или не выполняется совсем",
+        "Он останется применённым, деньги спишутся",
+        "СУБД автоматически повторит второй UPDATE",
+        "Первый UPDATE зафиксируется, а второй — отложится до перезапуска"
+      ],
+      "correct": 0,
+      "hints": [
+        "Буква A в ACID."
+      ],
+      "explanation": "Атомарность (Atomicity) — транзакция неделима."
+    },
+    {
+      "id": "a-tx-07",
+      "type": "write_query",
+      "title": "Закрытие счёта",
+      "description": "Клиент закрывает счёт 22. В одной транзакции: переведите весь остаток счёта 22 на счёт 20 (сумму возьмите подзапросом, не вписывайте число), затем обнулите баланс счёта 22 и установите ему `closed_at = '2024-04-01'`.",
+      "difficulty": "medium",
+      "mode": "mutation",
+      "allow": [
+        "update",
+        "transaction"
+      ],
+      "solution": "BEGIN; UPDATE accounts SET balance = balance + (SELECT balance FROM accounts WHERE id = 22) WHERE id = 20; UPDATE accounts SET balance = 0, closed_at = '2024-04-01' WHERE id = 22; COMMIT;",
+      "check": "SELECT id, balance, closed_at FROM accounts WHERE id IN (20, 22)",
+      "hints": [
+        "Подзапрос `(SELECT balance FROM accounts WHERE id = 22)` внутри `SET`.",
+        "Порядок важен: сначала зачисление, потом обнуление."
+      ],
+      "explanation": "Если обнулить счёт раньше перевода, подзапрос вернёт 0 и деньги потеряются. Транзакция делает операцию атомарной."
+    }
+  ]
+}
