@@ -18,7 +18,7 @@
       "type": "write_query",
       "title": "Покрывающий индекс",
       "description": "Запрос `SELECT order_date, status FROM orders WHERE customer_id = ?` выполняется очень часто. Создайте один индекс на `orders`, который начинается с `customer_id` и содержит также `order_date` и `status`, чтобы запрос обслуживался только индексом.",
-      "difficulty": "hard",
+      "difficulty": "expert",
       "mode": "mutation",
       "allow": ["create_index"],
       "solution": "CREATE INDEX idx_orders_customer_cover ON orders(customer_id, order_date, status)",
@@ -59,7 +59,7 @@
       "type": "challenge",
       "title": "Профиль клиента без размножения",
       "description": "Для каждого клиента выведите `id`, число заказов (`orders`), число позиций во всех заказах (`items`), сумму покупок (`spent` = `SUM(quantity * unit_price)`, округлить до 2 знаков) и число отзывов (`reviews`). Клиенты без активности — с нулями. Строки не должны размножаться: агрегируйте каждую таблицу отдельно. Отсортируйте по `id`.",
-      "difficulty": "hard",
+      "difficulty": "expert",
       "solution": "WITH o AS (SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id), i AS (SELECT o.customer_id, COUNT(*) AS items, SUM(oi.quantity * oi.unit_price) AS spent FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.customer_id), r AS (SELECT customer_id, COUNT(*) AS reviews FROM reviews GROUP BY customer_id) SELECT c.id, COALESCE(o.orders, 0) AS orders, COALESCE(i.items, 0) AS items, ROUND(COALESCE(i.spent, 0), 2) AS spent, COALESCE(r.reviews, 0) AS reviews FROM customers c LEFT JOIN o ON o.customer_id = c.id LEFT JOIN i ON i.customer_id = c.id LEFT JOIN r ON r.customer_id = c.id ORDER BY c.id",
       "hints": ["Прямое соединение заказов, позиций и отзывов перемножит строки.", "Три CTE с агрегатами + `LEFT JOIN` к клиентам."],
       "explanation": "Предагрегация каждой стороны — и правильный результат, и меньше работы для СУБД."
