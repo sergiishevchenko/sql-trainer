@@ -95,6 +95,10 @@ describe('content catalog', () => {
         if (!isMutation && !allowEmpty && (grade.expectedResult?.rows.length ?? 0) === 0) {
           failures.push(`${ex.id}: reference returns no rows (set allowEmpty if intended)`)
         }
+        if (isMutation) {
+          const noop = await fx.grading.grade(ex, { kind: 'sql', sql: 'SELECT 1' })
+          if (noop.correct) failures.push(`${ex.id}: a no-op answer passes the mutation check`)
+        }
 
         if ((ex.type === 'write_query' || ex.type === 'fix_bug' || ex.type === 'business_case' || ex.type === 'challenge') && ex.alt) {
           for (const alt of ex.alt) {

@@ -1,0 +1,59 @@
+{
+  "module": "expert.recursive",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "e-rec-01",
+      "type": "business_case",
+      "title": "Оргструктура с путями",
+      "description": "HR строит схему компании. Для каждого сотрудника, достижимого от руководителя без начальника, выведите `id`, глубину (`depth`, у верхнего руководителя 0) и путь (`path`) из полных имён (`first_name || ' ' || last_name`) через ` > ` от верхнего руководителя до сотрудника. Отсортируйте по пути.",
+      "difficulty": "hard",
+      "solution": "WITH RECURSIVE tree(id, depth, path) AS (SELECT id, 0, first_name || ' ' || last_name FROM employees WHERE manager_id IS NULL UNION ALL SELECT e.id, t.depth + 1, t.path || ' > ' || e.first_name || ' ' || e.last_name FROM employees e JOIN tree t ON e.manager_id = t.id) SELECT id, depth, path FROM tree ORDER BY path",
+      "hints": ["Якорь — сотрудник с `manager_id IS NULL`.", "На каждом шаге дописывайте имя к пути родителя."],
+      "explanation": "Путь, накопленный в рекурсии, одновременно описывает иерархию и задаёт удобный порядок вывода."
+    },
+    {
+      "id": "e-rec-02",
+      "type": "challenge",
+      "title": "Фонд оплаты команды",
+      "description": "Для каждого руководителя (у кого есть хотя бы один подчинённый) посчитайте всю команду — прямых и косвенных подчинённых, без самого руководителя. Выведите `manager` (`first_name || ' ' || last_name`), размер команды (`team_size`) и сумму зарплат команды (`team_payroll`). Отсортируйте по фонду по убыванию, затем по имени.",
+      "difficulty": "hard",
+      "solution": "WITH RECURSIVE tree(root_id, id) AS (SELECT manager_id, id FROM employees WHERE manager_id IS NOT NULL UNION ALL SELECT t.root_id, e.id FROM employees e JOIN tree t ON e.manager_id = t.id) SELECT m.first_name || ' ' || m.last_name AS manager, COUNT(*) AS team_size, SUM(e.salary) AS team_payroll FROM tree t JOIN employees m ON m.id = t.root_id JOIN employees e ON e.id = t.id GROUP BY t.root_id, m.first_name, m.last_name ORDER BY team_payroll DESC, manager",
+      "hints": ["Стартуйте с пар (руководитель, прямой подчинённый) и протягивайте `root_id` вниз по дереву.", "Затем присоедините зарплаты подчинённых и сгруппируйте по `root_id`."],
+      "explanation": "Перенос корня через рекурсию позволяет посчитать агрегаты по всем поддеревьям одним запросом."
+    },
+    {
+      "id": "e-rec-03",
+      "type": "business_case",
+      "title": "Выручка корневых категорий",
+      "description": "Категории товаров образуют дерево (`parent_id`). Посчитайте выручку (`SUM(quantity * unit_price)` из `order_items`) каждой корневой категории (без родителя) вместе со всеми её подкатегориями. Выведите `root_category` и `revenue` (округлить до 2 знаков, 0 если продаж нет). Отсортируйте по выручке по убыванию, затем по названию.",
+      "difficulty": "hard",
+      "dataset": "ecommerce",
+      "solution": "WITH RECURSIVE tree(root_id, id) AS (SELECT id, id FROM categories WHERE parent_id IS NULL UNION ALL SELECT t.root_id, c.id FROM categories c JOIN tree t ON c.parent_id = t.id) SELECT r.name AS root_category, ROUND(COALESCE(SUM(oi.quantity * oi.unit_price), 0), 2) AS revenue FROM tree t JOIN categories r ON r.id = t.root_id LEFT JOIN products p ON p.category_id = t.id LEFT JOIN order_items oi ON oi.product_id = p.id GROUP BY t.root_id, r.name ORDER BY revenue DESC, root_category",
+      "hints": ["Каждой категории сопоставьте её корень через рекурсию.", "Затем `LEFT JOIN` к товарам и позициям заказов."],
+      "explanation": "Свернуть факты к верхнему уровню иерархии — частая задача отчётности."
+    },
+    {
+      "id": "e-rec-04",
+      "type": "challenge",
+      "title": "Глубина учебного плана",
+      "description": "Для каждого курса, у которого есть пререквизиты, найдите все прямые и косвенные пререквизиты. Выведите код курса (`code`), число различных пререквизитов (`total_prereqs`) и длину самой длинной цепочки (`chain_depth`, прямой пререквизит — глубина 1). Отсортируйте по `total_prereqs` по убыванию, затем по `chain_depth` по убыванию, затем по коду.",
+      "difficulty": "hard",
+      "dataset": "university",
+      "solution": "WITH RECURSIVE req(course_id, prereq_id, depth) AS (SELECT course_id, prerequisite_id, 1 FROM prerequisites UNION ALL SELECT r.course_id, p.prerequisite_id, r.depth + 1 FROM req r JOIN prerequisites p ON p.course_id = r.prereq_id) SELECT c.code, COUNT(DISTINCT r.prereq_id) AS total_prereqs, MAX(r.depth) AS chain_depth FROM req r JOIN courses c ON c.id = r.course_id GROUP BY r.course_id, c.code ORDER BY total_prereqs DESC, chain_depth DESC, c.code",
+      "hints": ["Стартуйте со всех рёбер графа сразу, сохраняя исходный курс.", "Один пререквизит может встретиться по разным путям — используйте `COUNT(DISTINCT …)`."],
+      "explanation": "Транзитивное замыкание графа строится рекурсией от всех рёбер, а дубликаты путей убираются агрегатом."
+    },
+    {
+      "id": "e-rec-05",
+      "type": "business_case",
+      "title": "Календарь без пропусков",
+      "description": "В отчёте по продажам должны быть все месяцы с января по август 2024 года, даже без продаж. Сгенерируйте месяцы рекурсией и выведите `month` (`YYYY-MM`), количество продаж (`deals`) и проданных единиц (`units`, 0 если продаж нет). Отсортируйте по месяцу.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH RECURSIVE months(m) AS (SELECT '2024-01-01' UNION ALL SELECT date(m, '+1 month') FROM months WHERE m < '2024-08-01') SELECT strftime('%Y-%m', months.m) AS month, COUNT(s.id) AS deals, COALESCE(SUM(s.quantity), 0) AS units FROM months LEFT JOIN sales s ON strftime('%Y-%m', s.sale_date) = strftime('%Y-%m', months.m) GROUP BY months.m ORDER BY month",
+      "hints": ["`date(m, '+1 month')` — следующий месяц.", "К календарю присоединяйте продажи через `LEFT JOIN`."],
+      "explanation": "Генерация ряда дат и `LEFT JOIN` к фактам — стандартный способ показать периоды без данных."
+    }
+  ]
+}

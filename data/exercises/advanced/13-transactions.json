@@ -82,7 +82,7 @@
       "id": "a-tx-05",
       "type": "business_case",
       "title": "Комиссия за низкий остаток",
-      "description": "Банк вводит комиссию 5 для открытых (`closed_at IS NULL`) счетов типа `checking` с балансом меньше 1000. В одной транзакции: (1) запишите в `transactions` операции с датой `2024-04-01 00:00`, суммой `-5`, типом `fee` и описанием `Low balance fee` для каждого такого счёта; (2) уменьшите их баланс на 5. Порядок важен: сначала журнал, потом баланс.",
+      "description": "Банк вводит комиссию 5 для открытых (`closed_at IS NULL`) счетов типа `checking` с балансом строго меньше 1000. В одной транзакции: (1) запишите в `transactions` операции с датой `2024-04-01 00:00`, суммой `-5`, типом `fee` и описанием `Low balance fee` для каждого такого счёта; (2) уменьшите их баланс на 5. Скрытые тесты проверяют граничные случаи.",
       "difficulty": "hard",
       "mode": "mutation",
       "allow": [
@@ -94,9 +94,15 @@
       "check": "SELECT 'fee' AS kind, account_id AS ref, amount AS value FROM transactions WHERE tx_date = '2024-04-01 00:00' AND tx_type = 'fee' UNION ALL SELECT 'balance', id, balance FROM accounts",
       "hints": [
         "`INSERT INTO … SELECT …` создаст строку для каждого подходящего счёта.",
-        "Если сначала уменьшить баланс, набор подходящих счетов может измениться."
+        "Условие отбора одинаковое для журнала и для баланса: тип, открытость и остаток."
       ],
-      "explanation": "Массовые операции в транзакции с `INSERT … SELECT` — типичный приём для начислений и списаний."
+      "explanation": "Массовые операции в транзакции с `INSERT … SELECT` — типичный приём для начислений и списаний. Журнал и балансы меняются атомарно.",
+      "hidden": [
+        {
+          "name": "Граничные балансы",
+          "setup": "INSERT INTO accounts (id, client_id, account_type, currency, opened_at, closed_at, balance) VALUES (90, 1, 'checking', 'EUR', '2024-01-01', NULL, 1000), (91, 2, 'savings', 'EUR', '2024-01-01', NULL, 300), (92, 3, 'checking', 'EUR', '2024-01-01', NULL, 999.99), (93, 4, 'checking', 'EUR', '2020-01-01', '2024-02-01', 50);"
+        }
+      ]
     },
     {
       "id": "a-tx-06",

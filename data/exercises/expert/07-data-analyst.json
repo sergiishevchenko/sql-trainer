@@ -1,0 +1,58 @@
+{
+  "module": "expert.data-analyst",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "e-dan-01",
+      "type": "business_case",
+      "title": "KPI для дашборда",
+      "description": "Соберите одну строку ключевых метрик по заказам, у которых есть позиции. Сумма заказа — `SUM(quantity * unit_price)`. Метрики: `buyers` — различные клиенты с неотменёнными заказами; `orders` — число неотменённых заказов; `revenue` — их суммарная выручка (2 знака); `aov` — средний чек неотменённых заказов (2 знака); `cancel_rate` — доля отменённых среди всех заказов с позициями (%, 1 знак).",
+      "difficulty": "hard",
+      "solution": "WITH t AS (SELECT o.id, o.customer_id, o.status, SUM(oi.quantity * oi.unit_price) AS total FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.id, o.customer_id, o.status) SELECT COUNT(DISTINCT CASE WHEN status <> 'cancelled' THEN customer_id END) AS buyers, SUM(status <> 'cancelled') AS orders, ROUND(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END), 2) AS revenue, ROUND(SUM(CASE WHEN status <> 'cancelled' THEN total ELSE 0 END) / SUM(status <> 'cancelled'), 2) AS aov, ROUND(100.0 * SUM(status = 'cancelled') / COUNT(*), 1) AS cancel_rate FROM t",
+      "hints": ["Сначала сумма каждого заказа в CTE.", "Затем условная агрегация: каждая метрика — свой фильтр внутри агрегата."],
+      "explanation": "Строка KPI — типичный источник для карточек дашборда: один запрос, одна строка, несколько метрик."
+    },
+    {
+      "id": "e-dan-02",
+      "type": "business_case",
+      "title": "Выручка месяц к месяцу",
+      "description": "Для каждого месяца с неотменёнными заказами выведите `month` (`YYYY-MM`), выручку (`revenue` = `SUM(quantity * unit_price)`, 2 знака) и изменение к предыдущему такому месяцу (`mom_pct`, %, 1 знак; для первого — NULL). Отсортируйте по месяцу.",
+      "difficulty": "hard",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', o.order_date) AS month, SUM(oi.quantity * oi.unit_price) AS revenue FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE o.status <> 'cancelled' GROUP BY month) SELECT month, ROUND(revenue, 2) AS revenue, ROUND(100.0 * (revenue - LAG(revenue) OVER (ORDER BY month)) / LAG(revenue) OVER (ORDER BY month), 1) AS mom_pct FROM m ORDER BY month",
+      "hints": ["Агрегат по месяцам + `LAG(revenue)`.", "Округляйте выручку только при выводе."],
+      "explanation": "MoM-динамика — стандартный график любого продуктового дашборда."
+    },
+    {
+      "id": "e-dan-03",
+      "type": "challenge",
+      "title": "Сводная по регионам",
+      "description": "Постройте сводную таблицу выручки (`quantity * unit_price * (1 - discount)`) за январь–июнь 2024: строки — регионы (`region`), столбцы — `jan`, `feb`, `mar`, `apr`, `may`, `jun` и `total`. Все значения округлите до целого. Отсортируйте по `total` по убыванию.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH f AS (SELECT r.name AS region, strftime('%m', s.sale_date) AS m, s.quantity * p.unit_price * (1 - s.discount) AS revenue FROM sales s JOIN products p ON p.id = s.product_id JOIN sales_reps sr ON sr.id = s.rep_id JOIN regions r ON r.id = sr.region_id WHERE s.sale_date >= '2024-01-01' AND s.sale_date < '2024-07-01') SELECT region, ROUND(SUM(CASE WHEN m = '01' THEN revenue ELSE 0 END)) AS jan, ROUND(SUM(CASE WHEN m = '02' THEN revenue ELSE 0 END)) AS feb, ROUND(SUM(CASE WHEN m = '03' THEN revenue ELSE 0 END)) AS mar, ROUND(SUM(CASE WHEN m = '04' THEN revenue ELSE 0 END)) AS apr, ROUND(SUM(CASE WHEN m = '05' THEN revenue ELSE 0 END)) AS may, ROUND(SUM(CASE WHEN m = '06' THEN revenue ELSE 0 END)) AS jun, ROUND(SUM(revenue)) AS total FROM f GROUP BY region ORDER BY total DESC",
+      "hints": ["Выделите номер месяца через `strftime('%m', sale_date)`.", "Каждый столбец — `SUM(CASE WHEN m = '01' THEN revenue ELSE 0 END)`."],
+      "explanation": "Pivot через условную агрегацию — главный инструмент для табличных отчётов в SQL."
+    },
+    {
+      "id": "e-dan-04",
+      "type": "business_case",
+      "title": "Топ-2 фильма в жанре",
+      "description": "Для каждого жанра выведите два фильма с наибольшими сборами: `genre` (название), `place` (1 или 2), `title`, `box_office_musd`. Фильмы без сборов не учитывайте; при равных сборах выше фильм с меньшим `id`. Отсортируйте по жанру, затем по месту.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "WITH r AS (SELECT g.name AS genre, m.title, m.box_office_musd, ROW_NUMBER() OVER (PARTITION BY m.genre_id ORDER BY m.box_office_musd DESC, m.id) AS rn FROM movies m JOIN genres g ON g.id = m.genre_id WHERE m.box_office_musd IS NOT NULL) SELECT genre, rn AS place, title, box_office_musd FROM r WHERE rn <= 2 ORDER BY genre, place",
+      "hints": ["`ROW_NUMBER()` с партицией по жанру и фильтр `rn <= 2`."],
+      "explanation": "Top-N в каждой группе — одна из самых частых задач аналитика."
+    },
+    {
+      "id": "e-dan-05",
+      "type": "challenge",
+      "title": "Воронка заказов",
+      "description": "Постройте воронку по статусам заказов. Этапы: `placed` — все заказы, `shipped` — заказы в статусах `shipped` и `delivered`, `delivered` — доставленные. Выведите `stage`, число заказов (`orders`), долю от первого этапа (`pct_of_placed`) и от предыдущего этапа (`pct_of_prev`, для первого — NULL), обе в %, 1 знак. Строки — в порядке этапов воронки.",
+      "difficulty": "hard",
+      "solution": "WITH steps AS (SELECT 1 AS step, 'placed' AS stage, COUNT(*) AS orders FROM orders UNION ALL SELECT 2, 'shipped', SUM(status IN ('shipped', 'delivered')) FROM orders UNION ALL SELECT 3, 'delivered', SUM(status = 'delivered') FROM orders) SELECT stage, orders, ROUND(100.0 * orders / FIRST_VALUE(orders) OVER (ORDER BY step), 1) AS pct_of_placed, ROUND(100.0 * orders / LAG(orders) OVER (ORDER BY step), 1) AS pct_of_prev FROM steps ORDER BY step",
+      "hints": ["Соберите этапы через `UNION ALL` с номером шага для сортировки.", "`FIRST_VALUE` — первый этап, `LAG` — предыдущий."],
+      "explanation": "Воронка показывает, на каком шаге теряется больше всего объектов."
+    }
+  ]
+}

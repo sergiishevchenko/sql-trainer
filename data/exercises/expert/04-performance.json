@@ -1,0 +1,68 @@
+{
+  "module": "expert.performance",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "e-perf-01",
+      "type": "fix_bug",
+      "title": "Пустой и медленный отчёт",
+      "description": "Отчёт о заказах 2023 года возвращает пустой результат, а функция над `order_date` не даёт использовать индекс. Перепишите условие через диапазон дат.",
+      "difficulty": "medium",
+      "starter": "SELECT id, order_date\nFROM orders\nWHERE strftime('%Y', order_date) = 2023\nORDER BY id;",
+      "solution": "SELECT id, order_date FROM orders WHERE order_date >= '2023-01-01' AND order_date < '2024-01-01' ORDER BY id",
+      "hints": ["`strftime` возвращает текст, а `2023` — число: они не равны.", "Диапазон `>= '2023-01-01' AND < '2024-01-01'` решает обе проблемы."],
+      "explanation": "Условие по «голому» столбцу корректно сравнивает значения и совместимо с индексом."
+    },
+    {
+      "id": "e-perf-02",
+      "type": "write_query",
+      "title": "Покрывающий индекс",
+      "description": "Запрос `SELECT order_date, status FROM orders WHERE customer_id = ?` выполняется очень часто. Создайте один индекс на `orders`, который начинается с `customer_id` и содержит также `order_date` и `status`, чтобы запрос обслуживался только индексом.",
+      "difficulty": "hard",
+      "mode": "mutation",
+      "allow": ["create_index"],
+      "solution": "CREATE INDEX idx_orders_customer_cover ON orders(customer_id, order_date, status)",
+      "alt": ["CREATE INDEX idx_orders_customer_cover ON orders(customer_id, status, order_date)"],
+      "check": "SELECT EXISTS (SELECT 1 FROM sqlite_master m WHERE m.type = 'index' AND m.tbl_name = 'orders' AND (SELECT name FROM pragma_index_info(m.name) WHERE seqno = 0) = 'customer_id' AND EXISTS (SELECT 1 FROM pragma_index_info(m.name) WHERE name = 'order_date') AND EXISTS (SELECT 1 FROM pragma_index_info(m.name) WHERE name = 'status')) AS covering",
+      "hints": ["Столбец поиска — первым, остальные нужные столбцы — после него."],
+      "explanation": "Покрывающий индекс содержит все столбцы запроса, поэтому план показывает `USING COVERING INDEX`."
+    },
+    {
+      "id": "e-perf-03",
+      "type": "write_query",
+      "title": "Окно вместо подзапроса",
+      "description": "Перепишите запрос с коррелированным подзапросом через оконную функцию: для товаров с категорией выведите `id`, `name`, `category_id`, `price` и отклонение цены от средней по категории (`diff`, округлить до 2 знаков). Отсортируйте по `category_id`, цене по убыванию и `id`.\n\nИсходный запрос:\n`SELECT id, name, category_id, price, ROUND(price - (SELECT AVG(price) FROM products p2 WHERE p2.category_id = p.category_id), 2) AS diff FROM products p WHERE category_id IS NOT NULL ORDER BY category_id, price DESC, id`",
+      "difficulty": "medium",
+      "solution": "SELECT id, name, category_id, price, ROUND(price - AVG(price) OVER (PARTITION BY category_id), 2) AS diff FROM products WHERE category_id IS NOT NULL ORDER BY category_id, price DESC, id",
+      "hints": ["`AVG(price) OVER (PARTITION BY category_id)`."],
+      "explanation": "Окно считает среднее по категории за один проход вместо подзапроса на каждую строку."
+    },
+    {
+      "id": "e-perf-04",
+      "type": "explain_query",
+      "title": "UNION или UNION ALL",
+      "description": "Списки ID клиентов из двух источников заведомо не пересекаются. Почему здесь лучше использовать `UNION ALL`?",
+      "difficulty": "medium",
+      "sql": "SELECT customer_id FROM orders WHERE order_date < '2023-07-01'\nUNION\nSELECT customer_id FROM orders WHERE order_date >= '2023-07-01';",
+      "options": [
+        "`UNION` дополнительно удаляет дубликаты, для чего сортирует или хеширует весь результат; `UNION ALL` просто склеивает строки",
+        "`UNION ALL` использует индексы, а `UNION` — нет",
+        "`UNION` возвращает строки в случайном порядке",
+        "`UNION ALL` автоматически сортирует результат"
+      ],
+      "correct": 0,
+      "hints": ["Что `UNION` делает сверх простого объединения?"],
+      "explanation": "Если дубликатов быть не может или они нужны, `UNION ALL` экономит лишнюю работу."
+    },
+    {
+      "id": "e-perf-05",
+      "type": "challenge",
+      "title": "Профиль клиента без размножения",
+      "description": "Для каждого клиента выведите `id`, число заказов (`orders`), число позиций во всех заказах (`items`), сумму покупок (`spent` = `SUM(quantity * unit_price)`, округлить до 2 знаков) и число отзывов (`reviews`). Клиенты без активности — с нулями. Строки не должны размножаться: агрегируйте каждую таблицу отдельно. Отсортируйте по `id`.",
+      "difficulty": "hard",
+      "solution": "WITH o AS (SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id), i AS (SELECT o.customer_id, COUNT(*) AS items, SUM(oi.quantity * oi.unit_price) AS spent FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.customer_id), r AS (SELECT customer_id, COUNT(*) AS reviews FROM reviews GROUP BY customer_id) SELECT c.id, COALESCE(o.orders, 0) AS orders, COALESCE(i.items, 0) AS items, ROUND(COALESCE(i.spent, 0), 2) AS spent, COALESCE(r.reviews, 0) AS reviews FROM customers c LEFT JOIN o ON o.customer_id = c.id LEFT JOIN i ON i.customer_id = c.id LEFT JOIN r ON r.customer_id = c.id ORDER BY c.id",
+      "hints": ["Прямое соединение заказов, позиций и отзывов перемножит строки.", "Три CTE с агрегатами + `LEFT JOIN` к клиентам."],
+      "explanation": "Предагрегация каждой стороны — и правильный результат, и меньше работы для СУБД."
+    }
+  ]
+}

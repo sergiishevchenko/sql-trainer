@@ -1,0 +1,60 @@
+{
+  "module": "expert.data-analysis",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "e-da-01",
+      "type": "write_query",
+      "title": "Медиана цены",
+      "description": "Посчитайте медианную цену товаров (`median`). В SQLite нет функции `MEDIAN`: пронумеруйте строки по цене и возьмите среднее центральной строки (или двух центральных строк при чётном количестве).",
+      "difficulty": "hard",
+      "solution": "WITH o AS (SELECT price, ROW_NUMBER() OVER (ORDER BY price) AS rn, COUNT(*) OVER () AS n FROM products) SELECT AVG(price) AS median FROM o WHERE rn IN ((n + 1) / 2, (n + 2) / 2)",
+      "hints": ["`ROW_NUMBER() OVER (ORDER BY price)` и `COUNT(*) OVER ()`.", "Центральные номера: `(n + 1) / 2` и `(n + 2) / 2`."],
+      "explanation": "Медиана устойчива к выбросам, в отличие от среднего."
+    },
+    {
+      "id": "e-da-02",
+      "type": "write_query",
+      "title": "Гистограмма рейтингов",
+      "description": "Постройте распределение фильмов по рейтингу с шагом 0.5: корзина (`bucket`) — рейтинг, округлённый вниз до 0.5 (например, 7.3 → 7.0, 7.8 → 7.5). Выведите `bucket` и число фильмов (`movies`). Отсортируйте по корзине.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT CAST(rating * 2 AS INTEGER) / 2.0 AS bucket, COUNT(*) AS movies FROM movies GROUP BY bucket ORDER BY bucket",
+      "hints": ["Умножьте на 2, отбросьте дробную часть и разделите на 2.0."],
+      "explanation": "Корзины фиксированной ширины — основа любой гистограммы."
+    },
+    {
+      "id": "e-da-03",
+      "type": "challenge",
+      "title": "Медиана зарплат по отделам",
+      "description": "Для каждого отдела выведите название, число сотрудников (`employees`) и медианную зарплату (`median_salary`). Сотрудника без отдела не учитывайте. Отсортируйте по названию отдела.",
+      "difficulty": "hard",
+      "dataset": "employees",
+      "solution": "WITH o AS (SELECT department_id, salary, ROW_NUMBER() OVER (PARTITION BY department_id ORDER BY salary) AS rn, COUNT(*) OVER (PARTITION BY department_id) AS n FROM employees WHERE department_id IS NOT NULL) SELECT d.name, MAX(o.n) AS employees, AVG(o.salary) AS median_salary FROM o JOIN departments d ON d.id = o.department_id WHERE o.rn IN ((o.n + 1) / 2, (o.n + 2) / 2) GROUP BY o.department_id, d.name ORDER BY d.name",
+      "hints": ["Нумерация и размер группы — окна с `PARTITION BY department_id`.", "Затем оставьте центральные строки и усредните их по отделу."],
+      "explanation": "Медиана по группам — та же техника, что и общая медиана, но с партицией."
+    },
+    {
+      "id": "e-da-04",
+      "type": "challenge",
+      "title": "Выбросы по двум сигмам",
+      "description": "Найдите транзакции, сумма которых отклоняется от средней по всем транзакциям больше чем на два стандартных отклонения. Без функции корня: сравнивайте квадрат отклонения с учетверённой дисперсией (`AVG(x²) − AVG(x)²`). Выведите `id`, `account_id`, `amount`. Отсортируйте по `id`.",
+      "difficulty": "hard",
+      "dataset": "banking",
+      "solution": "WITH stats AS (SELECT AVG(amount) AS mean, AVG(amount * amount) - AVG(amount) * AVG(amount) AS variance FROM transactions) SELECT t.id, t.account_id, t.amount FROM transactions t CROSS JOIN stats WHERE (t.amount - stats.mean) * (t.amount - stats.mean) > 4 * stats.variance ORDER BY t.id",
+      "hints": ["Посчитайте среднее и дисперсию в CTE из одной строки.", "Условие: `(x − mean)² > 4 · variance`."],
+      "explanation": "Правило двух сигм — простой способ найти аномальные значения для дальнейшей проверки."
+    },
+    {
+      "id": "e-da-05",
+      "type": "business_case",
+      "title": "Квартили сделок",
+      "description": "Разбейте сделки на 4 равные группы по выручке (`quantity * unit_price * (1 - discount)`) с помощью `NTILE(4)` (при равенстве — по `id` сделки). Для каждого квартиля выведите `quartile`, число сделок (`deals`), минимальную, максимальную и среднюю выручку (`min_revenue`, `max_revenue`, `avg_revenue`, округлить до 2 знаков). Отсортируйте по квартилю.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH deals AS (SELECT s.id, s.quantity * p.unit_price * (1 - s.discount) AS revenue FROM sales s JOIN products p ON p.id = s.product_id), q AS (SELECT revenue, NTILE(4) OVER (ORDER BY revenue, id) AS quartile FROM deals) SELECT quartile, COUNT(*) AS deals, ROUND(MIN(revenue), 2) AS min_revenue, ROUND(MAX(revenue), 2) AS max_revenue, ROUND(AVG(revenue), 2) AS avg_revenue FROM q GROUP BY quartile ORDER BY quartile",
+      "hints": ["`NTILE(4) OVER (ORDER BY revenue, id)`.", "Затем обычная группировка по номеру квартиля."],
+      "explanation": "Квартили показывают форму распределения: где сосредоточены мелкие и крупные сделки."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "module": "expert.analytics",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "e-an-01",
+      "type": "business_case",
+      "title": "Рост заказов месяц к месяцу",
+      "description": "Руководитель хочет видеть динамику заказов. Для каждого месяца с заказами (`month` в формате `YYYY-MM`) выведите количество заказов (`orders`), количество в предыдущем месяце с заказами (`prev_orders`) и рост в процентах (`growth_pct` = (orders − prev_orders) / prev_orders × 100, округлить до 1 знака; для первого месяца — NULL). Отсортируйте по месяцу.",
+      "difficulty": "hard",
+      "solution": "WITH m AS (SELECT strftime('%Y-%m', order_date) AS month, COUNT(*) AS orders FROM orders GROUP BY month) SELECT month, orders, LAG(orders) OVER (ORDER BY month) AS prev_orders, ROUND(100.0 * (orders - LAG(orders) OVER (ORDER BY month)) / LAG(orders) OVER (ORDER BY month), 1) AS growth_pct FROM m ORDER BY month",
+      "hints": ["Сначала посчитайте заказы по месяцам в CTE.", "Затем используйте `LAG(orders) OVER (ORDER BY month)`."],
+      "explanation": "Сравнение периодов = агрегация по периоду + `LAG`. Деление на `LAG` для первой строки даёт NULL — это корректно."
+    },
+    {
+      "id": "e-an-02",
+      "type": "write_query",
+      "title": "Статусы заказов по годам",
+      "description": "Постройте сводную таблицу: для каждого года (`year`) — число доставленных (`delivered`), отменённых (`cancelled`), находящихся в работе (`in_progress`: статусы `processing` и `shipped`) заказов и общее число (`total`). Отсортируйте по году.",
+      "difficulty": "medium",
+      "solution": "SELECT strftime('%Y', order_date) AS year, SUM(status = 'delivered') AS delivered, SUM(status = 'cancelled') AS cancelled, SUM(status IN ('processing', 'shipped')) AS in_progress, COUNT(*) AS total FROM orders GROUP BY year ORDER BY year",
+      "alt": ["SELECT strftime('%Y', order_date) AS year, SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled, SUM(CASE WHEN status IN ('processing', 'shipped') THEN 1 ELSE 0 END) AS in_progress, COUNT(*) AS total FROM orders GROUP BY year ORDER BY year"],
+      "hints": ["Условная агрегация: `SUM(status = 'delivered')` или `SUM(CASE WHEN … THEN 1 ELSE 0 END)`."],
+      "explanation": "Pivot через условную агрегацию превращает значения столбца в отдельные столбцы."
+    },
+    {
+      "id": "e-an-03",
+      "type": "challenge",
+      "title": "Квартальные когорты",
+      "description": "Когорта клиента — квартал его первого заказа в формате `YYYY-Qn` (например, `2023-Q1`). Клиент «вернулся», если у него есть заказ в более позднем квартале. Для каждой когорты выведите `cohort`, размер (`customers`), число вернувшихся (`returned`) и долю вернувшихся (`return_pct`, округлить до 1 знака). Отсортируйте по когорте.",
+      "difficulty": "hard",
+      "solution": "WITH q AS (SELECT customer_id, strftime('%Y', order_date) || '-Q' || ((CAST(strftime('%m', order_date) AS INTEGER) + 2) / 3) AS quarter FROM orders), first AS (SELECT customer_id, MIN(quarter) AS cohort FROM q GROUP BY customer_id), returned AS (SELECT DISTINCT f.customer_id FROM first f JOIN q ON q.customer_id = f.customer_id AND q.quarter > f.cohort) SELECT f.cohort, COUNT(*) AS customers, COUNT(r.customer_id) AS returned, ROUND(100.0 * COUNT(r.customer_id) / COUNT(*), 1) AS return_pct FROM first f LEFT JOIN returned r ON r.customer_id = f.customer_id GROUP BY f.cohort ORDER BY f.cohort",
+      "hints": [
+        "Номер квартала: `(месяц + 2) / 3` в целочисленной арифметике.",
+        "Строки вида `2023-Q1` корректно сравниваются как текст.",
+        "Вернувшихся найдите отдельной CTE и присоедините через `LEFT JOIN`."
+      ],
+      "explanation": "Когортный анализ: определить момент входа, затем измерить последующую активность внутри каждой когорты."
+    },
+    {
+      "id": "e-an-04",
+      "type": "business_case",
+      "title": "Доля категорий по годам",
+      "description": "Посчитайте выручку по категориям для доставленных заказов (`status = 'delivered'`) в разрезе лет: `year`, `category` (название категории), `revenue` (`SUM(quantity * unit_price)` из `order_items`, округлить до 2 знаков) и долю категории в выручке года (`share_pct`, округлить до 1 знака). Товары без категории не учитывайте. Отсортируйте по году, затем по выручке по убыванию, затем по категории.",
+      "difficulty": "hard",
+      "solution": "WITH rev AS (SELECT strftime('%Y', o.order_date) AS year, c.name AS category, SUM(oi.quantity * oi.unit_price) AS revenue FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id JOIN categories c ON c.id = p.category_id WHERE o.status = 'delivered' GROUP BY year, c.name) SELECT year, category, ROUND(revenue, 2) AS revenue, ROUND(100.0 * revenue / SUM(revenue) OVER (PARTITION BY year), 1) AS share_pct FROM rev ORDER BY year, revenue DESC, category",
+      "hints": ["Агрегируйте по году и категории.", "Долю считайте окном `SUM(revenue) OVER (PARTITION BY year)`."],
+      "explanation": "Доля внутри периода — окно с партицией по периоду поверх агрегата."
+    },
+    {
+      "id": "e-an-05",
+      "type": "challenge",
+      "title": "Накопленная выручка регионов",
+      "description": "Для каждого региона и месяца продаж выведите `region` (название), `month` (`YYYY-MM`), выручку месяца (`revenue` = `SUM(quantity * unit_price * (1 - discount))`), накопленную с начала периода выручку региона (`ytd`) — обе округлить до 2 знаков, и долю региона в выручке этого месяца по всем регионам (`month_share_pct`, округлить до 1 знака). Отсортируйте по региону, затем по месяцу.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH m AS (SELECT r.name AS region, strftime('%Y-%m', s.sale_date) AS month, SUM(s.quantity * p.unit_price * (1 - s.discount)) AS revenue FROM sales s JOIN products p ON p.id = s.product_id JOIN sales_reps sr ON sr.id = s.rep_id JOIN regions r ON r.id = sr.region_id GROUP BY r.name, month) SELECT region, month, ROUND(revenue, 2) AS revenue, ROUND(SUM(revenue) OVER (PARTITION BY region ORDER BY month), 2) AS ytd, ROUND(100.0 * revenue / SUM(revenue) OVER (PARTITION BY month), 1) AS month_share_pct FROM m ORDER BY region, month",
+      "hints": ["Два окна с разными партициями: по региону (нарастающий итог) и по месяцу (доля).", "Округляйте только в финальном `SELECT`."],
+      "explanation": "Одна агрегированная таблица и несколько окон дают сразу несколько аналитических срезов."
+    }
+  ]
+}
