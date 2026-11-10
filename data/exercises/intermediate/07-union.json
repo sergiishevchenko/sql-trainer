@@ -1,0 +1,146 @@
+{
+  "module": "intermediate.union",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-union-01",
+      "type": "write_query",
+      "title": "Все города",
+      "description": "Выведите список всех городов без повторов: и городов клиентов (`customers.city`), и городов доставки (`orders.shipping_city`). Пропуски (NULL) исключите.",
+      "difficulty": "easy",
+      "solution": "SELECT city FROM customers WHERE city IS NOT NULL UNION SELECT shipping_city FROM orders",
+      "alt": [
+        "SELECT city FROM customers WHERE city IS NOT NULL UNION SELECT shipping_city FROM orders WHERE shipping_city IS NOT NULL"
+      ],
+      "hints": [
+        "`UNION` удаляет дубликаты автоматически."
+      ],
+      "explanation": "`UNION` объединяет два списка и убирает повторяющиеся значения."
+    },
+    {
+      "id": "i-union-02",
+      "type": "write_query",
+      "title": "Люди из двух таблиц",
+      "description": "В базе фильмов выведите единый список имён (`person`) актёров и режиссёров с меткой `role` (`actor` или `director`). Отсортируйте по имени, затем по роли.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT name AS person, 'actor' AS role FROM actors UNION SELECT name, 'director' FROM directors ORDER BY person, role",
+      "hints": [
+        "Константа в `SELECT` помечает источник строки.",
+        "`ORDER BY` пишется один раз в конце."
+      ],
+      "explanation": "Имена столбцов результата берутся из первого запроса."
+    },
+    {
+      "id": "i-union-03",
+      "type": "write_query",
+      "title": "Страны из разных источников",
+      "description": "Выведите все страны, из которых есть актёры или режиссёры, без повторов, по алфавиту.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT country FROM actors UNION SELECT country FROM directors ORDER BY country",
+      "hints": [
+        "`UNION` + `ORDER BY` в конце."
+      ],
+      "explanation": "Повторяющиеся страны встречаются в обеих таблицах, `UNION` оставляет каждую один раз."
+    },
+    {
+      "id": "i-union-04",
+      "type": "write_query",
+      "title": "Особые товары",
+      "description": "Выведите названия товаров, которые либо закончились на складе (`stock = 0`), либо стоят больше 1000. Используйте `UNION` двух запросов.",
+      "difficulty": "easy",
+      "solution": "SELECT name FROM products WHERE stock = 0 UNION SELECT name FROM products WHERE price > 1000",
+      "alt": [
+        "SELECT name FROM products WHERE stock = 0 OR price > 1000"
+      ],
+      "hints": [
+        "Каждое условие — отдельный `SELECT`."
+      ],
+      "explanation": "Для одной таблицы `UNION` эквивалентен `OR`, но полезен, когда наборы строятся из разных источников."
+    },
+    {
+      "id": "i-union-05",
+      "type": "write_query",
+      "title": "Контакты для рассылки",
+      "description": "Соберите единый список email для рассылки без повторов: email клиентов, сделавших хотя бы один заказ, и email всех VIP-клиентов. Пустые email (NULL) исключите.",
+      "difficulty": "medium",
+      "solution": "SELECT c.email FROM customers c JOIN orders o ON o.customer_id = c.id WHERE c.email IS NOT NULL UNION SELECT email FROM customers WHERE is_vip = 1 AND email IS NOT NULL",
+      "hints": [
+        "Первый набор требует `JOIN` с заказами, второй — фильтр по VIP."
+      ],
+      "explanation": "`UNION` убирает дубликаты — и клиентов с несколькими заказами, и тех, кто попал в оба набора."
+    },
+    {
+      "id": "i-union-06",
+      "type": "fix_bug",
+      "title": "Разное число столбцов",
+      "description": "Запрос должен вывести единый список: имя и страну клиентов, а также названия категорий товаров (страны у категорий нет, поэтому второй столбец для них — NULL). Сейчас запрос падает с ошибкой. Исправьте второй `SELECT`.",
+      "difficulty": "easy",
+      "starter": "SELECT first_name, country FROM customers\nUNION\nSELECT name FROM categories;",
+      "solution": "SELECT first_name, country FROM customers UNION SELECT name, NULL FROM categories",
+      "hints": [
+        "У обоих запросов должно быть одинаковое количество столбцов."
+      ],
+      "explanation": "`UNION` требует одинакового количества столбцов. Недостающий столбец заполняют `NULL`."
+    },
+    {
+      "id": "i-union-07",
+      "type": "predict_result",
+      "title": "UNION убирает повторы",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT COUNT(*) FROM (\n  SELECT 1 AS x UNION SELECT 1 UNION SELECT 2\n);",
+      "ask": "value",
+      "options": [
+        "3",
+        "2",
+        "1"
+      ],
+      "hints": [
+        "Дубликаты удаляются."
+      ],
+      "explanation": "`UNION` оставляет уникальные значения 1 и 2 — всего 2 строки."
+    },
+    {
+      "id": "i-union-08",
+      "type": "choose_query",
+      "title": "Где ставить ORDER BY",
+      "description": "Какой запрос корректно выведет объединённый список имён студентов и преподавателей по алфавиту?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT full_name FROM students UNION SELECT full_name FROM professors ORDER BY full_name",
+        "SELECT full_name FROM students ORDER BY full_name UNION SELECT full_name FROM professors",
+        "SELECT full_name FROM students UNION ORDER BY full_name SELECT full_name FROM professors",
+        "SELECT full_name FROM students, professors ORDER BY full_name"
+      ],
+      "correct": 0,
+      "hints": [
+        "`ORDER BY` сортирует итоговый результат и пишется один раз."
+      ],
+      "explanation": "В SQLite `ORDER BY` внутри частей `UNION` запрещён — только в конце."
+    },
+    {
+      "id": "i-union-09",
+      "type": "order_parts",
+      "title": "Сборка UNION",
+      "description": "Соберите запрос: уникальный список городов отделений банка и городов клиентов, по алфавиту.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "parts": [
+        "SELECT city FROM branches",
+        "UNION",
+        "SELECT city FROM clients",
+        "ORDER BY city"
+      ],
+      "distractors": [
+        "UNION ORDER BY city"
+      ],
+      "hints": [
+        "`ORDER BY` — в самом конце."
+      ],
+      "explanation": "Два `SELECT` объединяются оператором `UNION`, затем результат сортируется."
+    }
+  ]
+}

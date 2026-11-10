@@ -1,0 +1,115 @@
+{
+  "module": "intermediate.exists",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-exists-01",
+      "type": "write_query",
+      "title": "Клиенты с заказами",
+      "description": "С помощью `EXISTS` выведите `id` и имя клиентов, у которых есть хотя бы один заказ.",
+      "difficulty": "easy",
+      "solution": "SELECT c.id, c.first_name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)",
+      "alt": ["SELECT id, first_name FROM customers WHERE id IN (SELECT customer_id FROM orders)"],
+      "hints": ["Подзапрос должен быть связан с внешней строкой: `o.customer_id = c.id`."],
+      "explanation": "`EXISTS` истинно, если подзапрос нашёл хотя бы одну строку."
+    },
+    {
+      "id": "i-exists-02",
+      "type": "write_query",
+      "title": "Товары без продаж",
+      "description": "Выведите названия товаров, которые ни разу не заказывали.",
+      "difficulty": "easy",
+      "solution": "SELECT p.name FROM products p WHERE NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = p.id)",
+      "alt": ["SELECT p.name FROM products p LEFT JOIN order_items oi ON oi.product_id = p.id WHERE oi.id IS NULL"],
+      "hints": ["`NOT EXISTS` — подзапрос не нашёл ни одной строки."],
+      "explanation": "`NOT EXISTS` — надёжный способ найти записи без связанных строк."
+    },
+    {
+      "id": "i-exists-03",
+      "type": "write_query",
+      "title": "Клиенты с отменами",
+      "description": "Выведите имя и фамилию клиентов, у которых есть хотя бы один отменённый заказ.",
+      "difficulty": "easy",
+      "solution": "SELECT c.first_name, c.last_name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND o.status = 'cancelled')",
+      "hints": ["Добавьте условие на статус внутрь подзапроса."],
+      "explanation": "Внутри `EXISTS` можно использовать любые дополнительные условия."
+    },
+    {
+      "id": "i-exists-04",
+      "type": "write_query",
+      "title": "Все заказы доставлены",
+      "description": "Выведите `id` и имя клиентов, у которых есть заказы и **все** они доставлены (`delivered`).",
+      "difficulty": "hard",
+      "solution": "SELECT c.id, c.first_name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND o.status <> 'delivered')",
+      "alt": ["SELECT c.id, c.first_name FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.first_name HAVING SUM(o.status <> 'delivered') = 0"],
+      "hints": ["«Все доставлены» = «нет ни одного недоставленного».", "Не забудьте исключить клиентов без заказов."],
+      "explanation": "Квантор «для всех» выражается через двойное отрицание: `NOT EXISTS` строки, нарушающей условие."
+    },
+    {
+      "id": "i-exists-05",
+      "type": "write_query",
+      "title": "Сотрудники на проектах",
+      "description": "Выведите имя и фамилию сотрудников, которые участвуют хотя бы в одном проекте с нагрузкой больше 300 часов.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT e.first_name, e.last_name FROM employees e WHERE EXISTS (SELECT 1 FROM employee_projects ep WHERE ep.employee_id = e.id AND ep.hours > 300)",
+      "hints": ["Ищите в `employee_projects`."],
+      "explanation": "`EXISTS` не дублирует сотрудника, даже если подходящих проектов несколько."
+    },
+    {
+      "id": "i-exists-06",
+      "type": "write_query",
+      "title": "Режиссёры без хитов",
+      "description": "Выведите имена режиссёров, у которых нет ни одного фильма с рейтингом 8.5 и выше.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT d.name FROM directors d WHERE NOT EXISTS (SELECT 1 FROM movies m WHERE m.director_id = d.id AND m.rating >= 8.5)",
+      "hints": ["`NOT EXISTS` с условием на рейтинг."],
+      "explanation": "Режиссёры без фильмов тоже попадут в результат — у них нет фильмов с высоким рейтингом."
+    },
+    {
+      "id": "i-exists-07",
+      "type": "fix_bug",
+      "title": "Некоррелированный EXISTS",
+      "description": "Запрос должен вывести товары, на которые есть отзывы, но выводит все товары. Исправьте.",
+      "difficulty": "medium",
+      "starter": "SELECT p.name\nFROM products p\nWHERE EXISTS (SELECT 1 FROM reviews r);",
+      "solution": "SELECT p.name FROM products p WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.product_id = p.id)",
+      "hints": ["Подзапрос не связан с внешней строкой."],
+      "explanation": "Без условия связи подзапрос всегда находит строки, и `EXISTS` истинно для каждого товара."
+    },
+    {
+      "id": "i-exists-08",
+      "type": "choose_query",
+      "title": "EXISTS или JOIN",
+      "description": "Какой запрос выведет каждого клиента с отзывом ровно **один раз**?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT c.first_name FROM customers c WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.customer_id = c.id)",
+        "SELECT c.first_name FROM customers c JOIN reviews r ON r.customer_id = c.id",
+        "SELECT c.first_name FROM customers c LEFT JOIN reviews r ON r.customer_id = c.id",
+        "SELECT c.first_name FROM customers c WHERE EXISTS (SELECT 1 FROM reviews)"
+      ],
+      "correct": 0,
+      "hints": ["`JOIN` повторяет клиента для каждого его отзыва."],
+      "explanation": "`EXISTS` проверяет наличие и не размножает строки внешней таблицы."
+    },
+    {
+      "id": "i-exists-09",
+      "type": "explain_query",
+      "title": "Что внутри EXISTS",
+      "description": "Имеет ли значение, что выбирать внутри `EXISTS`: `SELECT 1`, `SELECT *` или `SELECT NULL`?",
+      "difficulty": "medium",
+      "sql": "SELECT name FROM products p\nWHERE EXISTS (SELECT NULL FROM reviews r WHERE r.product_id = p.id);",
+      "options": [
+        "Нет: EXISTS проверяет только наличие строк, значения столбцов игнорируются",
+        "Да: SELECT NULL всегда даёт ложь",
+        "Да: нужно выбирать первичный ключ",
+        "Да: SELECT * работает быстрее"
+      ],
+      "correct": 0,
+      "hints": ["Даже строка из одних NULL — это строка."],
+      "explanation": "`EXISTS` смотрит, вернул ли подзапрос строки. Принято писать `SELECT 1` для читаемости."
+    }
+  ]
+}

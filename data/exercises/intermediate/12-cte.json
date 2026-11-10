@@ -1,0 +1,103 @@
+{
+  "module": "intermediate.cte",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-cte-01",
+      "type": "write_query",
+      "title": "Средний чек через CTE",
+      "description": "С помощью `WITH` посчитайте сумму каждого заказа (`order_totals`), затем выведите средний (`avg_check`) и максимальный (`max_check`) чек, округлив среднее до 2 знаков.",
+      "difficulty": "easy",
+      "solution": "WITH order_totals AS (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id) SELECT ROUND(AVG(total), 2) AS avg_check, MAX(total) AS max_check FROM order_totals",
+      "hints": ["`WITH имя AS (запрос) SELECT … FROM имя`."],
+      "explanation": "CTE даёт имя промежуточному результату и делает запрос читаемым."
+    },
+    {
+      "id": "i-cte-02",
+      "type": "write_query",
+      "title": "Крупные заказы",
+      "description": "Используя CTE с суммами заказов, выведите `id`, дату заказа и сумму (`total`) заказов на сумму больше 1500. Отсортируйте по сумме по убыванию.",
+      "difficulty": "medium",
+      "solution": "WITH totals AS (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id) SELECT o.id, o.order_date, t.total FROM orders o JOIN totals t ON t.order_id = o.id WHERE t.total > 1500 ORDER BY t.total DESC",
+      "hints": ["Соедините CTE с таблицей `orders`."],
+      "explanation": "CTE можно соединять с таблицами как обычную таблицу."
+    },
+    {
+      "id": "i-cte-03",
+      "type": "write_query",
+      "title": "Две CTE",
+      "description": "Посчитайте выручку по клиентам (CTE `customer_revenue`), затем среднюю выручку на клиента (CTE `avg_revenue`) и выведите имя и выручку клиентов с выручкой выше средней. Отсортируйте по выручке по убыванию.",
+      "difficulty": "medium",
+      "solution": "WITH customer_revenue AS (SELECT o.customer_id, SUM(oi.quantity * oi.unit_price) AS revenue FROM orders o JOIN order_items oi ON oi.order_id = o.id GROUP BY o.customer_id), avg_revenue AS (SELECT AVG(revenue) AS value FROM customer_revenue) SELECT c.first_name, cr.revenue FROM customer_revenue cr JOIN customers c ON c.id = cr.customer_id WHERE cr.revenue > (SELECT value FROM avg_revenue) ORDER BY cr.revenue DESC",
+      "hints": ["Вторая CTE может ссылаться на первую."],
+      "explanation": "Цепочка CTE раскладывает задачу на понятные шаги."
+    },
+    {
+      "id": "i-cte-04",
+      "type": "write_query",
+      "title": "Отделы и средние",
+      "description": "С помощью CTE посчитайте среднюю зарплату по отделам и выведите название отдела и среднюю зарплату (`avg_salary`, округлить до целого) для отделов, где она выше общей средней зарплаты. Отсортируйте по `avg_salary` по убыванию.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "WITH dept_avg AS (SELECT department_id, AVG(salary) AS avg_salary FROM employees GROUP BY department_id) SELECT d.name, ROUND(da.avg_salary) AS avg_salary FROM dept_avg da JOIN departments d ON d.id = da.department_id WHERE da.avg_salary > (SELECT AVG(salary) FROM employees) ORDER BY da.avg_salary DESC",
+      "hints": ["Общую среднюю можно посчитать скалярным подзапросом."],
+      "explanation": "CTE хранит агрегат по отделам, а основной запрос сравнивает его с общим средним."
+    },
+    {
+      "id": "i-cte-05",
+      "type": "write_query",
+      "title": "Выполнение плана",
+      "description": "Для каждого продавца и месяца из `monthly_targets` посчитайте выручку (`revenue` = `SUM(quantity * unit_price * (1 - discount))`, цена — из `products`) и процент выполнения плана (`pct`, округлить до 1 знака). Выведите имя продавца, месяц, план, выручку (округлить до 2 знаков) и `pct`. Отсортируйте по месяцу, затем по имени.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH revenue AS (SELECT s.rep_id, strftime('%Y-%m', s.sale_date) AS month, SUM(s.quantity * p.unit_price * (1 - s.discount)) AS revenue FROM sales s JOIN products p ON p.id = s.product_id GROUP BY s.rep_id, month) SELECT sr.name, t.month, t.target_amount, ROUND(COALESCE(r.revenue, 0), 2) AS revenue, ROUND(100.0 * COALESCE(r.revenue, 0) / t.target_amount, 1) AS pct FROM monthly_targets t JOIN sales_reps sr ON sr.id = t.rep_id LEFT JOIN revenue r ON r.rep_id = t.rep_id AND r.month = t.month ORDER BY t.month, sr.name",
+      "hints": ["Сначала посчитайте выручку по продавцу и месяцу в CTE.", "Присоедините её к планам через `LEFT JOIN` — у кого-то может не быть продаж."],
+      "explanation": "CTE изолирует расчёт факта, а основной запрос сравнивает его с планом."
+    },
+    {
+      "id": "i-cte-06",
+      "type": "fix_bug",
+      "title": "Запятая между CTE",
+      "description": "Запрос с двумя CTE падает с синтаксической ошибкой. Исправьте.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "starter": "WITH good AS (SELECT * FROM movies WHERE rating >= 8)\nWITH recent AS (SELECT * FROM good WHERE release_year >= 2010)\nSELECT title FROM recent;",
+      "solution": "WITH good AS (SELECT * FROM movies WHERE rating >= 8), recent AS (SELECT * FROM good WHERE release_year >= 2010) SELECT title FROM recent",
+      "hints": ["`WITH` пишется один раз, CTE разделяются запятыми."],
+      "explanation": "Синтаксис: `WITH a AS (...), b AS (...) SELECT …`."
+    },
+    {
+      "id": "i-cte-07",
+      "type": "predict_result",
+      "title": "Результат CTE",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "WITH t(x) AS (SELECT 5 UNION ALL SELECT 10 UNION ALL SELECT 15)\nSELECT SUM(x) FROM t WHERE x > 5;",
+      "ask": "value",
+      "options": ["25", "30", "15", "10"],
+      "hints": ["Суммируются только значения больше 5."],
+      "explanation": "10 + 15 = 25."
+    },
+    {
+      "id": "i-cte-08",
+      "type": "order_parts",
+      "title": "Сборка CTE",
+      "description": "Соберите запрос: CTE с количеством фильмов по режиссёрам, затем имена режиссёров с 3 и более фильмами.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "parts": ["WITH counts AS (", "SELECT director_id, COUNT(*) AS n FROM movies GROUP BY director_id", ")", "SELECT d.name FROM directors d JOIN counts c ON c.director_id = d.id", "WHERE c.n >= 3"],
+      "hints": ["Сначала объявление CTE в скобках, затем основной запрос."],
+      "explanation": "Основной запрос обращается к CTE по имени `counts`."
+    },
+    {
+      "id": "i-cte-09",
+      "type": "business_case",
+      "title": "Когорты регистрации",
+      "description": "Маркетинг просит отчёт по году регистрации клиентов: год (`cohort`), количество клиентов (`customers`), сколько из них сделали хотя бы один заказ (`buyers`) и конверсия в процентах (`conversion`, округлить до 1 знака). Отсортируйте по году.",
+      "difficulty": "hard",
+      "solution": "WITH buyers AS (SELECT DISTINCT customer_id FROM orders) SELECT strftime('%Y', c.registered_at) AS cohort, COUNT(*) AS customers, COUNT(b.customer_id) AS buyers, ROUND(100.0 * COUNT(b.customer_id) / COUNT(*), 1) AS conversion FROM customers c LEFT JOIN buyers b ON b.customer_id = c.id GROUP BY cohort ORDER BY cohort",
+      "hints": ["CTE с уникальными покупателями избавит от дублей при соединении.", "`COUNT(b.customer_id)` считает только покупателей."],
+      "explanation": "Предварительная дедупликация в CTE защищает от размножения строк при `JOIN`."
+    }
+  ]
+}

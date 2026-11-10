@@ -1,0 +1,120 @@
+{
+  "module": "intermediate.subqueries",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-sub-01",
+      "type": "write_query",
+      "title": "Дороже среднего",
+      "description": "Выведите название и цену товаров, которые дороже средней цены всех товаров.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products WHERE price > (SELECT AVG(price) FROM products)",
+      "hints": ["Среднее посчитайте скалярным подзапросом."],
+      "explanation": "Подзапрос возвращает одно число, с которым сравнивается каждая строка."
+    },
+    {
+      "id": "i-sub-02",
+      "type": "write_query",
+      "title": "Отклонение от среднего",
+      "description": "Выведите название товара, цену и отклонение цены от средней (`diff`, округлить до 2 знаков). Отсортируйте по `diff` по убыванию, затем по названию.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price, ROUND(price - (SELECT AVG(price) FROM products), 2) AS diff FROM products ORDER BY diff DESC, name",
+      "hints": ["Скалярный подзапрос можно использовать в `SELECT`."],
+      "explanation": "Подзапрос в `SELECT` вычисляется как обычное значение."
+    },
+    {
+      "id": "i-sub-03",
+      "type": "write_query",
+      "title": "Средний чек",
+      "description": "Посчитайте средний чек (среднюю сумму заказа) по позициям заказов, округлив до 2 знаков. Сначала посчитайте сумму каждого заказа в подзапросе.",
+      "difficulty": "medium",
+      "solution": "SELECT ROUND(AVG(total), 2) FROM (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id)",
+      "alt": ["WITH t AS (SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id) SELECT ROUND(AVG(total), 2) FROM t"],
+      "hints": ["Подзапрос в `FROM` даёт таблицу сумм заказов.", "Затем возьмите от неё `AVG`."],
+      "explanation": "«Агрегат от агрегата» требует двух уровней: подзапрос группирует, внешний запрос агрегирует результат."
+    },
+    {
+      "id": "i-sub-04",
+      "type": "write_query",
+      "title": "Выше среднего по отделу",
+      "description": "Выведите имя, зарплату и `department_id` сотрудников, чья зарплата выше средней зарплаты **в их отделе**.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT e.first_name, e.salary, e.department_id FROM employees e WHERE e.salary > (SELECT AVG(x.salary) FROM employees x WHERE x.department_id = e.department_id)",
+      "hints": ["Коррелированный подзапрос ссылается на `e.department_id`."],
+      "explanation": "Подзапрос пересчитывается для каждой строки внешнего запроса со своим отделом."
+    },
+    {
+      "id": "i-sub-05",
+      "type": "write_query",
+      "title": "Последний заказ клиента",
+      "description": "Для каждого клиента, сделавшего заказ, выведите имя и дату его последнего заказа (`last_order`), используя коррелированный подзапрос в `SELECT`. Отсортируйте по имени.",
+      "difficulty": "medium",
+      "solution": "SELECT c.first_name, (SELECT MAX(o.order_date) FROM orders o WHERE o.customer_id = c.id) AS last_order FROM customers c WHERE c.id IN (SELECT customer_id FROM orders) ORDER BY c.first_name",
+      "alt": ["SELECT c.first_name, MAX(o.order_date) AS last_order FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.first_name ORDER BY c.first_name"],
+      "hints": ["`(SELECT MAX(order_date) FROM orders WHERE customer_id = c.id)`."],
+      "explanation": "Коррелированный подзапрос в `SELECT` вычисляется для каждого клиента."
+    },
+    {
+      "id": "i-sub-06",
+      "type": "write_query",
+      "title": "Самый популярный жанр",
+      "description": "Выведите название жанра, в котором больше всего фильмов. Используйте подзапрос, чтобы найти максимальное количество.",
+      "difficulty": "hard",
+      "dataset": "movies",
+      "solution": "SELECT g.name FROM genres g JOIN movies m ON m.genre_id = g.id GROUP BY g.id, g.name HAVING COUNT(*) = (SELECT MAX(cnt) FROM (SELECT COUNT(*) AS cnt FROM movies GROUP BY genre_id))",
+      "hints": ["Внутренний подзапрос считает фильмы по жанрам, внешний — берёт максимум.", "Сравните в `HAVING`."],
+      "explanation": "Такой запрос вернёт все жанры с максимальным количеством, если их несколько."
+    },
+    {
+      "id": "i-sub-07",
+      "type": "fix_bug",
+      "title": "Подзапрос вернул много строк",
+      "description": "Запрос должен вывести товары дороже самого дорогого товара категории 4 (`Audio`). Сейчас он сравнивает только с первой ценой категории. Исправьте.",
+      "difficulty": "medium",
+      "starter": "SELECT name, price\nFROM products\nWHERE price > (SELECT price FROM products WHERE category_id = 4);",
+      "solution": "SELECT name, price FROM products WHERE price > (SELECT MAX(price) FROM products WHERE category_id = 4)",
+      "hints": ["Скалярный подзапрос должен возвращать одно значение — используйте агрегат."],
+      "explanation": "SQLite молча берёт первую строку подзапроса. Явный `MAX` делает логику корректной."
+    },
+    {
+      "id": "i-sub-08",
+      "type": "predict_result",
+      "title": "Пустой скалярный подзапрос",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "hard",
+      "sql": "SELECT name FROM products\nWHERE price > (SELECT price FROM products WHERE id = -1);",
+      "ask": "rowCount",
+      "options": ["0", "26", "1"],
+      "hints": ["Если подзапрос не вернул строк, его значение — NULL."],
+      "explanation": "`price > NULL` — это NULL, поэтому ни одна строка не проходит условие."
+    },
+    {
+      "id": "i-sub-09",
+      "type": "choose_query",
+      "title": "Коррелированный или нет",
+      "description": "Какой запрос выведет фильмы, рейтинг которых выше среднего рейтинга фильмов **того же жанра**?",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "options": [
+        "SELECT m.title FROM movies m WHERE m.rating > (SELECT AVG(x.rating) FROM movies x WHERE x.genre_id = m.genre_id)",
+        "SELECT m.title FROM movies m WHERE m.rating > (SELECT AVG(rating) FROM movies)",
+        "SELECT m.title FROM movies m WHERE m.rating > (SELECT AVG(x.rating) FROM movies x WHERE x.genre_id = x.genre_id)",
+        "SELECT m.title FROM movies m GROUP BY m.genre_id HAVING m.rating > AVG(m.rating)"
+      ],
+      "correct": 0,
+      "hints": ["Подзапрос должен ссылаться на жанр внешней строки."],
+      "explanation": "`x.genre_id = x.genre_id` всегда истинно — это среднее по всем фильмам."
+    },
+    {
+      "id": "i-sub-10",
+      "type": "business_case",
+      "title": "Доля категории в выручке",
+      "description": "Финансовый аналитик просит долю каждой категории в общей выручке: название категории (`category`), выручка (`revenue`) и доля в процентах (`share_pct`, округлить до 1 знака). Учитывайте только товары с категорией. Отсортируйте по выручке по убыванию.",
+      "difficulty": "hard",
+      "solution": "SELECT c.name AS category, SUM(oi.quantity * oi.unit_price) AS revenue, ROUND(100.0 * SUM(oi.quantity * oi.unit_price) / (SELECT SUM(oi2.quantity * oi2.unit_price) FROM order_items oi2 JOIN products p2 ON p2.id = oi2.product_id WHERE p2.category_id IS NOT NULL), 1) AS share_pct FROM order_items oi JOIN products p ON p.id = oi.product_id JOIN categories c ON c.id = p.category_id GROUP BY c.id, c.name ORDER BY revenue DESC",
+      "hints": ["Общую выручку посчитайте скалярным подзапросом.", "Не забудьте `100.0` для дробного деления."],
+      "explanation": "Скалярный подзапрос с общим итогом — простой способ посчитать доли."
+    }
+  ]
+}

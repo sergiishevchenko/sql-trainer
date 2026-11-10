@@ -1,0 +1,124 @@
+{
+  "module": "intermediate.right-join",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-right-01",
+      "type": "write_query",
+      "title": "Все категории",
+      "description": "Используя `RIGHT JOIN`, выведите название товара и название категории для **всех** категорий, включая категории без товаров. Таблица `products` должна стоять слева.",
+      "difficulty": "easy",
+      "solution": "SELECT p.name, c.name FROM products p RIGHT JOIN categories c ON c.id = p.category_id",
+      "alt": ["SELECT p.name, c.name FROM categories c LEFT JOIN products p ON p.category_id = c.id"],
+      "hints": ["`RIGHT JOIN` сохраняет все строки правой таблицы."],
+      "explanation": "Категории без товаров получат NULL в столбце названия товара."
+    },
+    {
+      "id": "i-right-02",
+      "type": "write_query",
+      "title": "Пустые категории",
+      "description": "Выведите названия категорий, в которых нет ни одного товара. Используйте `RIGHT JOIN`.",
+      "difficulty": "easy",
+      "solution": "SELECT c.name FROM products p RIGHT JOIN categories c ON c.id = p.category_id WHERE p.id IS NULL",
+      "alt": ["SELECT c.name FROM categories c LEFT JOIN products p ON p.category_id = c.id WHERE p.id IS NULL"],
+      "hints": ["Проверьте, что у категории нет пары в `products`."],
+      "explanation": "Anti-join работает и с `RIGHT JOIN` — проверяем NULL в левой таблице."
+    },
+    {
+      "id": "i-right-03",
+      "type": "join_builder",
+      "title": "Все жанры",
+      "description": "Настройте соединение, чтобы вывести название каждого жанра и фильмы этого жанра. Жанры без фильмов тоже должны попасть в результат. Слева должна быть таблица `movies`.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "tables": ["movies", "genres", "directors"],
+      "select": "genres.name, movies.title",
+      "answer": { "left": "movies", "right": "genres", "join": "RIGHT", "leftColumn": "genre_id", "rightColumn": "id" },
+      "hints": ["Все строки нужны из правой таблицы."],
+      "explanation": "`movies RIGHT JOIN genres` = `genres LEFT JOIN movies`."
+    },
+    {
+      "id": "i-right-04",
+      "type": "write_query",
+      "title": "Фильмы по жанрам с нулями",
+      "description": "Для каждого жанра выведите название и количество фильмов (`movies_count`), включая жанры без фильмов. Используйте `RIGHT JOIN` (`movies` слева). Отсортируйте по количеству по убыванию, затем по названию жанра.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT g.name, COUNT(m.id) AS movies_count FROM movies m RIGHT JOIN genres g ON g.id = m.genre_id GROUP BY g.id, g.name ORDER BY movies_count DESC, g.name",
+      "alt": ["SELECT g.name, COUNT(m.id) AS movies_count FROM genres g LEFT JOIN movies m ON m.genre_id = g.id GROUP BY g.id, g.name ORDER BY movies_count DESC, g.name"],
+      "hints": ["Считайте `COUNT(m.id)`, а не `COUNT(*)`."],
+      "explanation": "Для жанров без фильмов `m.id` равен NULL и не учитывается в `COUNT(m.id)`."
+    },
+    {
+      "id": "i-right-05",
+      "type": "write_query",
+      "title": "Регионы и продавцы",
+      "description": "Выведите название каждого региона и имена продавцов в нём, включая регионы без продавцов. `sales_reps` слева, `regions` справа. Отсортируйте по региону, затем по имени продавца.",
+      "difficulty": "easy",
+      "dataset": "sales",
+      "solution": "SELECT r.name, sr.name FROM sales_reps sr RIGHT JOIN regions r ON r.id = sr.region_id ORDER BY r.name, sr.name",
+      "alt": ["SELECT r.name, sr.name FROM regions r LEFT JOIN sales_reps sr ON sr.region_id = r.id ORDER BY r.name, sr.name"],
+      "hints": ["Сохраняются все регионы."],
+      "explanation": "`RIGHT JOIN` полезен, когда «главная» таблица оказывается справа."
+    },
+    {
+      "id": "i-right-06",
+      "type": "fix_bug",
+      "title": "Перепутанное направление",
+      "description": "Запрос должен вывести **все** отделы и сотрудников в них (отделы без сотрудников — тоже). Но выводятся все сотрудники, включая сотрудника без отдела. Исправьте тип соединения.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "starter": "SELECT d.name, e.first_name\nFROM employees e\nLEFT JOIN departments d ON d.id = e.department_id;",
+      "solution": "SELECT d.name, e.first_name FROM employees e RIGHT JOIN departments d ON d.id = e.department_id",
+      "alt": ["SELECT d.name, e.first_name FROM departments d LEFT JOIN employees e ON e.department_id = d.id"],
+      "hints": ["Все строки нужны из таблицы, которая справа."],
+      "explanation": "`LEFT` сохраняет левую таблицу (`employees`), а нужно сохранить правую (`departments`)."
+    },
+    {
+      "id": "i-right-07",
+      "type": "predict_result",
+      "title": "RIGHT JOIN и подсчёт",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT c.name\nFROM products p\nRIGHT JOIN categories c ON c.id = p.category_id\nWHERE p.id IS NULL;",
+      "ask": "rowCount",
+      "hints": ["Посчитайте категории, в которых нет товаров."],
+      "explanation": "Остаются только категории без единого товара."
+    },
+    {
+      "id": "i-right-08",
+      "type": "choose_query",
+      "title": "Эквивалентная запись",
+      "description": "Какой запрос возвращает тот же результат, что и `SELECT f.name, s.full_name FROM students s RIGHT JOIN faculties f ON f.id = s.faculty_id`?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT f.name, s.full_name FROM faculties f LEFT JOIN students s ON s.faculty_id = f.id",
+        "SELECT f.name, s.full_name FROM students s LEFT JOIN faculties f ON f.id = s.faculty_id",
+        "SELECT f.name, s.full_name FROM faculties f JOIN students s ON s.faculty_id = f.id WHERE s.id IS NULL",
+        "SELECT f.name, s.full_name FROM faculties f CROSS JOIN students s"
+      ],
+      "correct": 0,
+      "hints": ["`A RIGHT JOIN B` = `B LEFT JOIN A`."],
+      "explanation": "Перестановка таблиц и замена RIGHT на LEFT даёт тот же результат."
+    },
+    {
+      "id": "i-right-09",
+      "type": "explain_query",
+      "title": "Когда нужен RIGHT JOIN",
+      "description": "Что вернёт этот запрос?",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "sql": "SELECT b.name, c.full_name\nFROM clients c\nRIGHT JOIN branches b ON b.id = c.branch_id;",
+      "options": [
+        "Все отделения банка и их клиентов; отделения без клиентов — с NULL вместо имени",
+        "Только клиентов, у которых есть отделение",
+        "Всех клиентов, включая клиентов без отделения",
+        "Все возможные пары отделение–клиент"
+      ],
+      "correct": 0,
+      "hints": ["Сохраняются строки правой таблицы."],
+      "explanation": "`RIGHT JOIN branches` гарантирует, что каждое отделение появится хотя бы один раз."
+    }
+  ]
+}

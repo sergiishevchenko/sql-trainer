@@ -1,0 +1,151 @@
+{
+  "module": "intermediate.full-join",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-full-01",
+      "type": "write_query",
+      "title": "Товары и категории полностью",
+      "description": "Выведите название товара и название категории так, чтобы в результат попали и товары без категории, и категории без товаров.",
+      "difficulty": "easy",
+      "solution": "SELECT p.name, c.name FROM products p FULL OUTER JOIN categories c ON c.id = p.category_id",
+      "alt": [
+        "SELECT p.name, c.name FROM products p FULL JOIN categories c ON c.id = p.category_id"
+      ],
+      "hints": [
+        "`FULL OUTER JOIN` сохраняет строки обеих таблиц."
+      ],
+      "explanation": "Строки без пары с любой стороны сохраняются, недостающие значения — NULL."
+    },
+    {
+      "id": "i-full-02",
+      "type": "write_query",
+      "title": "Только расхождения",
+      "description": "Выведите только «осиротевшие» строки: товары без категории и категории без товаров (столбцы `product` и `category`).",
+      "difficulty": "medium",
+      "solution": "SELECT p.name AS product, c.name AS category FROM products p FULL OUTER JOIN categories c ON c.id = p.category_id WHERE p.id IS NULL OR c.id IS NULL",
+      "hints": [
+        "Отберите строки, где одна из сторон — NULL."
+      ],
+      "explanation": "`FULL JOIN` + проверка NULL с обеих сторон — способ найти все расхождения между двумя наборами."
+    },
+    {
+      "id": "i-full-03",
+      "type": "join_builder",
+      "title": "Сотрудники и отделы целиком",
+      "description": "Настройте соединение так, чтобы попали все сотрудники (даже без отдела) и все отделы (даже без сотрудников).",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "tables": [
+        "employees",
+        "departments"
+      ],
+      "select": "employees.first_name, departments.name",
+      "answer": {
+        "left": "employees",
+        "right": "departments",
+        "join": "FULL OUTER",
+        "leftColumn": "department_id",
+        "rightColumn": "id"
+      },
+      "hints": [
+        "Нужно сохранить строки обеих таблиц."
+      ],
+      "explanation": "Только `FULL OUTER JOIN` сохраняет непарные строки с обеих сторон."
+    },
+    {
+      "id": "i-full-04",
+      "type": "write_query",
+      "title": "Статус присутствия",
+      "description": "Для каждой строки полного соединения товаров и категорий выведите `COALESCE(p.name, '-')` как `product`, `COALESCE(c.name, '-')` как `category` и признак `presence`: `both`, `no_category` или `no_products`. Отсортируйте по `presence`, затем по `product`, затем по `category`.",
+      "difficulty": "medium",
+      "solution": "SELECT COALESCE(p.name, '-') AS product, COALESCE(c.name, '-') AS category, CASE WHEN c.id IS NULL THEN 'no_category' WHEN p.id IS NULL THEN 'no_products' ELSE 'both' END AS presence FROM products p FULL OUTER JOIN categories c ON c.id = p.category_id ORDER BY presence, product, category",
+      "hints": [
+        "Определите, с какой стороны NULL, через `CASE`."
+      ],
+      "explanation": "Такая разметка — основа отчётов сверки данных."
+    },
+    {
+      "id": "i-full-05",
+      "type": "write_query",
+      "title": "План и факт",
+      "description": "Сравните планы продаж на январь 2024 (`monthly_targets`, `month = '2024-01'`) с фактом — количеством продаж каждого продавца в январе. Выведите `rep_id` (из любой стороны), `target_amount` и `deals` (количество продаж, 0 если не было). Включите и продавцов без плана, и продавцов без продаж. Отсортируйте по `rep_id`.",
+      "difficulty": "hard",
+      "dataset": "sales",
+      "solution": "WITH fact AS (SELECT rep_id, COUNT(*) AS deals FROM sales WHERE sale_date >= '2024-01-01' AND sale_date < '2024-02-01' GROUP BY rep_id), plan AS (SELECT rep_id, target_amount FROM monthly_targets WHERE month = '2024-01') SELECT COALESCE(plan.rep_id, fact.rep_id) AS rep_id, plan.target_amount, COALESCE(fact.deals, 0) AS deals FROM plan FULL OUTER JOIN fact ON fact.rep_id = plan.rep_id ORDER BY rep_id",
+      "hints": [
+        "Сначала подготовьте два набора: план и факт (через CTE или подзапросы).",
+        "Ключ берите через `COALESCE`."
+      ],
+      "explanation": "`FULL JOIN` двух агрегатов — классика «план–факт»: видны и невыполненные планы, и продажи без плана."
+    },
+    {
+      "id": "i-full-06",
+      "type": "fix_bug",
+      "title": "Пропавшие названия",
+      "description": "Запрос должен вывести единый столбец `item`: название товара, а для категорий без товаров — название категории. Сейчас для категорий без товаров выводится NULL. Исправьте выражение.",
+      "difficulty": "medium",
+      "starter": "SELECT p.name AS item\nFROM products p\nFULL OUTER JOIN categories c ON c.id = p.category_id;",
+      "solution": "SELECT COALESCE(p.name, c.name) AS item FROM products p FULL OUTER JOIN categories c ON c.id = p.category_id",
+      "hints": [
+        "При `FULL JOIN` значение может прийти только с одной стороны."
+      ],
+      "explanation": "`COALESCE(p.name, c.name)` берёт название из той таблицы, где оно есть.",
+      "alt": [
+        "SELECT IFNULL(p.name, c.name) AS item FROM products p FULL OUTER JOIN categories c ON c.id = p.category_id"
+      ]
+    },
+    {
+      "id": "i-full-07",
+      "type": "predict_result",
+      "title": "Размер полного соединения",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "hard",
+      "sql": "SELECT p.id, c.id\nFROM products p\nFULL OUTER JOIN categories c ON c.id = p.category_id;",
+      "ask": "rowCount",
+      "hints": [
+        "Строки = совпавшие пары + товары без категории + категории без товаров."
+      ],
+      "explanation": "Каждый товар даёт ровно одну строку, и к ним добавляются категории без товаров."
+    },
+    {
+      "id": "i-full-08",
+      "type": "choose_query",
+      "title": "Эмуляция FULL JOIN",
+      "description": "Какой запрос даст тот же **набор строк**, что и `FULL OUTER JOIN` клиентов банка и отделений, в СУБД без поддержки `FULL JOIN`?",
+      "difficulty": "hard",
+      "dataset": "banking",
+      "options": [
+        "SELECT c.full_name, b.name FROM clients c LEFT JOIN branches b ON b.id = c.branch_id UNION SELECT c.full_name, b.name FROM branches b LEFT JOIN clients c ON c.branch_id = b.id",
+        "SELECT c.full_name, b.name FROM clients c LEFT JOIN branches b ON b.id = c.branch_id",
+        "SELECT c.full_name, b.name FROM clients c JOIN branches b ON b.id = c.branch_id",
+        "SELECT c.full_name, b.name FROM clients c CROSS JOIN branches b"
+      ],
+      "correct": 0,
+      "hints": [
+        "Объедините «левое» и «правое» соединения."
+      ],
+      "explanation": "`LEFT JOIN` ∪ `RIGHT JOIN` (записанный как LEFT с переставленными таблицами) = `FULL JOIN`."
+    },
+    {
+      "id": "i-full-09",
+      "type": "explain_query",
+      "title": "Что даёт FULL JOIN",
+      "description": "Что вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "sql": "SELECT f.name, p.full_name\nFROM faculties f\nFULL OUTER JOIN professors p ON p.faculty_id = f.id;",
+      "options": [
+        "Все факультеты и всех преподавателей; где пары нет — NULL",
+        "Только факультеты, где есть преподаватели",
+        "Только преподавателей без факультета",
+        "Все возможные пары факультет–преподаватель"
+      ],
+      "correct": 0,
+      "hints": [
+        "`FULL` = `LEFT` + `RIGHT`."
+      ],
+      "explanation": "Полное внешнее соединение не теряет строк ни с одной стороны."
+    }
+  ]
+}

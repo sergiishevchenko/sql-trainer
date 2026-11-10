@@ -1,0 +1,114 @@
+{
+  "module": "intermediate.inner-join",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-inner-01",
+      "type": "write_query",
+      "title": "Заказы с именами клиентов",
+      "description": "Выведите `id` заказа, дату заказа и имя клиента (`first_name`), который его сделал.",
+      "difficulty": "easy",
+      "solution": "SELECT o.id, o.order_date, c.first_name FROM orders o JOIN customers c ON c.id = o.customer_id",
+      "alt": ["SELECT o.id, o.order_date, c.first_name FROM orders o INNER JOIN customers c ON o.customer_id = c.id"],
+      "hints": ["Связь: `orders.customer_id = customers.id`."],
+      "explanation": "`JOIN … ON` подставляет к каждому заказу строку клиента с совпадающим `id`."
+    },
+    {
+      "id": "i-inner-02",
+      "type": "write_query",
+      "title": "Товары и категории",
+      "description": "Выведите название товара (`product`) и название его категории (`category`). Товары без категории не нужны.",
+      "difficulty": "easy",
+      "solution": "SELECT p.name AS product, c.name AS category FROM products p JOIN categories c ON c.id = p.category_id",
+      "hints": ["В обеих таблицах есть столбец `name` — укажите, из какой таблицы брать."],
+      "explanation": "`INNER JOIN` отбрасывает товары без пары в `categories`, в том числе с `category_id = NULL`."
+    },
+    {
+      "id": "i-inner-03",
+      "type": "join_builder",
+      "title": "Сотрудники и отделы",
+      "description": "Настройте соединение так, чтобы для каждого сотрудника, у которого есть отдел, вывести его имя и название отдела.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "tables": ["employees", "departments", "projects"],
+      "select": "employees.first_name, departments.name",
+      "answer": { "left": "employees", "right": "departments", "join": "INNER", "leftColumn": "department_id", "rightColumn": "id" },
+      "hints": ["Внешний ключ `employees.department_id` ссылается на `departments.id`."],
+      "explanation": "Внутреннее соединение по внешнему ключу — самый частый вид JOIN."
+    },
+    {
+      "id": "i-inner-04",
+      "type": "write_query",
+      "title": "Три таблицы",
+      "description": "Для каждой позиции заказа выведите `order_id`, название товара и количество. Отсортируйте по `order_id`, затем по названию товара.",
+      "difficulty": "medium",
+      "solution": "SELECT oi.order_id, p.name, oi.quantity FROM order_items oi JOIN products p ON p.id = oi.product_id ORDER BY oi.order_id, p.name",
+      "hints": ["Соедините `order_items` с `products` по `product_id`."],
+      "explanation": "Таблица позиций связывает заказы и товары (отношение «многие ко многим»)."
+    },
+    {
+      "id": "i-inner-05",
+      "type": "write_query",
+      "title": "Выручка по странам",
+      "description": "Посчитайте выручку (`SUM(quantity * unit_price)`) по странам клиентов. Выведите страну и выручку (`revenue`), отсортированные по выручке по убыванию.",
+      "difficulty": "medium",
+      "solution": "SELECT c.country, SUM(oi.quantity * oi.unit_price) AS revenue FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN customers c ON c.id = o.customer_id GROUP BY c.country ORDER BY revenue DESC",
+      "hints": ["Цепочка: `order_items` → `orders` → `customers`.", "Затем `GROUP BY c.country`."],
+      "explanation": "Соединения строят «широкую» таблицу, которую затем можно агрегировать."
+    },
+    {
+      "id": "i-inner-06",
+      "type": "write_query",
+      "title": "Фильмы и режиссёры",
+      "description": "Выведите название фильма, год и имя режиссёра для фильмов с рейтингом от 8.5. Отсортируйте по рейтингу по убыванию, затем по названию.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT m.title, m.release_year, d.name FROM movies m JOIN directors d ON d.id = m.director_id WHERE m.rating >= 8.5 ORDER BY m.rating DESC, m.title",
+      "hints": ["`WHERE` можно использовать после `JOIN`."],
+      "explanation": "Фильтрация применяется к уже соединённым строкам."
+    },
+    {
+      "id": "i-inner-07",
+      "type": "write_query",
+      "title": "Актёрский состав",
+      "description": "Выведите название фильма и имя актёра для всех ролей в фильмах 2010 года и позже. Отсортируйте по названию фильма, затем по `billing_order`.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT m.title, a.name FROM movie_cast mc JOIN movies m ON m.id = mc.movie_id JOIN actors a ON a.id = mc.actor_id WHERE m.release_year >= 2010 ORDER BY m.title, mc.billing_order",
+      "hints": ["`movie_cast` связывает фильмы и актёров."],
+      "explanation": "Таблица-связка участвует в двух соединениях: с `movies` и с `actors`."
+    },
+    {
+      "id": "i-inner-08",
+      "type": "fix_bug",
+      "title": "Неоднозначный столбец",
+      "description": "Запрос должен вывести названия товаров и названия их категорий, но падает с ошибкой `ambiguous column name`.",
+      "difficulty": "easy",
+      "starter": "SELECT name, name\nFROM products p\nJOIN categories c ON c.id = p.category_id;",
+      "solution": "SELECT p.name, c.name FROM products p JOIN categories c ON c.id = p.category_id",
+      "hints": ["Столбец `name` есть в обеих таблицах."],
+      "explanation": "Если имя столбца встречается в нескольких таблицах, его нужно уточнить алиасом."
+    },
+    {
+      "id": "i-inner-09",
+      "type": "predict_result",
+      "title": "Сколько строк после JOIN",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT c.id\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE c.country = 'France';",
+      "ask": "rowCount",
+      "hints": ["Каждый заказ французского клиента даёт отдельную строку."],
+      "explanation": "Клиент повторяется столько раз, сколько у него заказов. Клиенты без заказов не попадают в `INNER JOIN`."
+    },
+    {
+      "id": "i-inner-10",
+      "type": "business_case",
+      "title": "Топ товаров по выручке",
+      "description": "Коммерческий директор просит топ-5 товаров по выручке среди **доставленных** заказов: название товара (`product`), категория (`category`), продано единиц (`units`), выручка (`revenue`). Сортировка по выручке по убыванию, затем по названию.",
+      "difficulty": "hard",
+      "solution": "SELECT p.name AS product, c.name AS category, SUM(oi.quantity) AS units, SUM(oi.quantity * oi.unit_price) AS revenue FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN products p ON p.id = oi.product_id JOIN categories c ON c.id = p.category_id WHERE o.status = 'delivered' GROUP BY p.id, p.name, c.name ORDER BY revenue DESC, product LIMIT 5",
+      "hints": ["Нужны четыре таблицы: позиции, заказы, товары, категории.", "Фильтр по статусу — в `WHERE`, затем группировка по товару."],
+      "explanation": "Типичный аналитический запрос: соединить факты со справочниками, отфильтровать, агрегировать и отсортировать."
+    }
+  ]
+}

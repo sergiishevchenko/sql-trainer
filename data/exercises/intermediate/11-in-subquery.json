@@ -1,0 +1,114 @@
+{
+  "module": "intermediate.in-subquery",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-insub-01",
+      "type": "write_query",
+      "title": "Покупатели ноутбуков",
+      "description": "Выведите имена клиентов, которые покупали товары категории с `category_id = 3` (ноутбуки). Используйте вложенные `IN`.",
+      "difficulty": "medium",
+      "solution": "SELECT first_name FROM customers WHERE id IN (SELECT customer_id FROM orders WHERE id IN (SELECT order_id FROM order_items WHERE product_id IN (SELECT id FROM products WHERE category_id = 3)))",
+      "alt": ["SELECT DISTINCT c.first_name FROM customers c JOIN orders o ON o.customer_id = c.id JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE p.category_id = 3"],
+      "hints": ["Идите по цепочке: товары → позиции → заказы → клиенты."],
+      "explanation": "Каждый подзапрос возвращает список ключей для следующего уровня."
+    },
+    {
+      "id": "i-insub-02",
+      "type": "write_query",
+      "title": "Товары из Парижа",
+      "description": "Выведите названия товаров, которые доставлялись в Париж (`shipping_city = 'Paris'`).",
+      "difficulty": "easy",
+      "solution": "SELECT name FROM products WHERE id IN (SELECT product_id FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE shipping_city = 'Paris'))",
+      "hints": ["Два уровня вложенности."],
+      "explanation": "`IN` не дублирует товары, даже если их доставляли в Париж несколько раз."
+    },
+    {
+      "id": "i-insub-03",
+      "type": "write_query",
+      "title": "Без проектов",
+      "description": "Выведите имена сотрудников, которые не участвуют ни в одном проекте. Используйте `NOT IN`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name FROM employees WHERE id NOT IN (SELECT employee_id FROM employee_projects)",
+      "alt": ["SELECT e.first_name FROM employees e WHERE NOT EXISTS (SELECT 1 FROM employee_projects ep WHERE ep.employee_id = e.id)"],
+      "hints": ["`employee_id` в `employee_projects` не бывает NULL, поэтому `NOT IN` безопасен."],
+      "explanation": "`NOT IN` возвращает строки, ключа которых нет в списке."
+    },
+    {
+      "id": "i-insub-04",
+      "type": "write_query",
+      "title": "Ловушка NOT IN",
+      "description": "Выведите названия отделов, в которых нет сотрудников. Учтите, что у одного сотрудника `department_id` равен NULL, — запрос не должен из-за этого вернуть пустой результат по ошибке.",
+      "difficulty": "hard",
+      "solution": "SELECT name FROM departments WHERE id NOT IN (SELECT department_id FROM employees WHERE department_id IS NOT NULL)",
+      "dataset": "employees",
+      "alt": ["SELECT d.name FROM departments d WHERE NOT EXISTS (SELECT 1 FROM employees e WHERE e.department_id = d.id)"],
+      "allowEmpty": true,
+      "hints": ["Отфильтруйте NULL внутри подзапроса или используйте `NOT EXISTS`."],
+      "explanation": "Если в списке `NOT IN` есть NULL, условие никогда не бывает истинным."
+    },
+    {
+      "id": "i-insub-05",
+      "type": "write_query",
+      "title": "Фильмы популярных актёров",
+      "description": "Выведите названия фильмов, в которых снимался хотя бы один актёр из Великобритании (`country = 'UK'`). Отсортируйте по названию.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT title FROM movies WHERE id IN (SELECT movie_id FROM movie_cast WHERE actor_id IN (SELECT id FROM actors WHERE country = 'UK')) ORDER BY title",
+      "hints": ["Актёры → роли → фильмы."],
+      "explanation": "Вложенные `IN` строят цепочку фильтров по связанным таблицам."
+    },
+    {
+      "id": "i-insub-06",
+      "type": "write_query",
+      "title": "Студенты сильных курсов",
+      "description": "Выведите имена студентов, которые записаны хотя бы на один курс с 6 и более кредитами. Отсортируйте по имени.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT full_name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id IN (SELECT id FROM courses WHERE credits >= 6)) ORDER BY full_name",
+      "hints": ["Курсы → записи → студенты."],
+      "explanation": "Результат каждого подзапроса — список ключей для следующего условия `IN`."
+    },
+    {
+      "id": "i-insub-07",
+      "type": "fix_bug",
+      "title": "Несколько столбцов в IN",
+      "description": "Запрос должен вывести клиентов с заказами, но падает с ошибкой: подзапрос возвращает два столбца.",
+      "difficulty": "easy",
+      "starter": "SELECT first_name\nFROM customers\nWHERE id IN (SELECT customer_id, status FROM orders);",
+      "solution": "SELECT first_name FROM customers WHERE id IN (SELECT customer_id FROM orders)",
+      "hints": ["Подзапрос для `IN` должен возвращать один столбец."],
+      "explanation": "`IN` сравнивает одно значение со списком — подзапрос должен отдавать один столбец."
+    },
+    {
+      "id": "i-insub-08",
+      "type": "predict_result",
+      "title": "NOT IN с NULL",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "hard",
+      "sql": "SELECT name FROM products\nWHERE id NOT IN (SELECT 1 UNION ALL SELECT NULL);",
+      "ask": "rowCount",
+      "options": ["0", "25", "26", "1"],
+      "hints": ["Сравнение с NULL в списке делает условие неизвестным."],
+      "explanation": "`id NOT IN (1, NULL)` = `id <> 1 AND id <> NULL`. Вторая часть — NULL, поэтому строк нет."
+    },
+    {
+      "id": "i-insub-09",
+      "type": "choose_query",
+      "title": "Безопасная разность",
+      "description": "Какой запрос корректно выведет курсы, на которые никто не записан, даже если в будущем в `enrollments.course_id` появятся NULL?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT title FROM courses c WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.course_id = c.id)",
+        "SELECT title FROM courses WHERE id NOT IN (SELECT course_id FROM enrollments UNION ALL SELECT NULL)",
+        "SELECT title FROM courses WHERE id IN (SELECT course_id FROM enrollments)",
+        "SELECT title FROM courses c JOIN enrollments e ON e.course_id = c.id WHERE e.course_id IS NULL"
+      ],
+      "correct": 0,
+      "hints": ["`NOT EXISTS` не страдает от NULL в подзапросе."],
+      "explanation": "`NOT EXISTS` проверяет наличие пары и корректно работает при любых NULL."
+    }
+  ]
+}

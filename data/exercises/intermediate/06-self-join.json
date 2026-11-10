@@ -1,0 +1,135 @@
+{
+  "module": "intermediate.self-join",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "i-self-01",
+      "type": "write_query",
+      "title": "Сотрудник и руководитель",
+      "description": "Выведите имя сотрудника (`employee`) и имя его руководителя (`manager`). Сотрудники без руководителя тоже должны быть в результате.",
+      "difficulty": "easy",
+      "solution": "SELECT e.first_name AS employee, m.first_name AS manager FROM employees e LEFT JOIN employees m ON m.id = e.manager_id",
+      "hints": [
+        "Таблица `employees` участвует дважды: `e` — сотрудник, `m` — руководитель.",
+        "`LEFT JOIN` сохранит CEO без руководителя."
+      ],
+      "explanation": "Self join связывает строку таблицы с другой строкой той же таблицы."
+    },
+    {
+      "id": "i-self-02",
+      "type": "write_query",
+      "title": "Зарабатывают больше начальника",
+      "description": "Найдите сотрудников, чья зарплата выше зарплаты их руководителя. Выведите имя сотрудника, его зарплату, имя руководителя и зарплату руководителя.",
+      "difficulty": "medium",
+      "solution": "SELECT e.first_name, e.salary, m.first_name, m.salary FROM employees e JOIN employees m ON m.id = e.manager_id WHERE e.salary > m.salary",
+      "allowEmpty": true,
+      "hints": [
+        "Сравните `e.salary` и `m.salary`."
+      ],
+      "explanation": "После соединения каждая строка содержит данные и сотрудника, и руководителя — их можно сравнивать."
+    },
+    {
+      "id": "i-self-03",
+      "type": "write_query",
+      "title": "Число подчинённых",
+      "description": "Для каждого руководителя выведите имя и количество прямых подчинённых (`reports`). Отсортируйте по количеству по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "solution": "SELECT m.first_name, COUNT(*) AS reports FROM employees e JOIN employees m ON m.id = e.manager_id GROUP BY m.id, m.first_name ORDER BY reports DESC, m.first_name",
+      "hints": [
+        "Соедините подчинённых с руководителями и сгруппируйте по руководителю."
+      ],
+      "explanation": "Группировка по стороне «руководитель» считает его прямых подчинённых."
+    },
+    {
+      "id": "i-self-04",
+      "type": "write_query",
+      "title": "Коллеги в одном отделе",
+      "description": "Выведите все пары сотрудников одного отдела (`a.first_name`, `b.first_name`) без повторов и пар «сам с собой» (`a.id < b.id`) для отдела с `department_id = 6`.",
+      "difficulty": "medium",
+      "solution": "SELECT a.first_name, b.first_name FROM employees a JOIN employees b ON b.department_id = a.department_id AND a.id < b.id WHERE a.department_id = 6",
+      "hints": [
+        "Условие `a.id < b.id` убирает зеркальные пары."
+      ],
+      "explanation": "Без `a.id < b.id` каждая пара появилась бы дважды, плюс пары сотрудника с самим собой."
+    },
+    {
+      "id": "i-self-05",
+      "type": "write_query",
+      "title": "Подкатегории",
+      "description": "В таблице `categories` у подкатегорий заполнен `parent_id`. Выведите название подкатегории (`child`) и родительской категории (`parent`). Отсортируйте по родителю, затем по подкатегории.",
+      "difficulty": "easy",
+      "dataset": "ecommerce",
+      "solution": "SELECT c.name AS child, p.name AS parent FROM categories c JOIN categories p ON p.id = c.parent_id ORDER BY parent, child",
+      "hints": [
+        "`c.parent_id = p.id`."
+      ],
+      "explanation": "Иерархия категорий хранится в той же таблице через ссылку на родителя."
+    },
+    {
+      "id": "i-self-06",
+      "type": "join_builder",
+      "title": "Продавцы и регионы",
+      "description": "Настройте соединение, чтобы вывести имя каждого продавца и название его региона. Это подготовка к следующему шагу: сравнению продавцов одного региона через self join.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "tables": [
+        "sales_reps",
+        "regions",
+        "products"
+      ],
+      "select": "sales_reps.name, regions.name",
+      "answer": {
+        "left": "sales_reps",
+        "right": "regions",
+        "join": "INNER",
+        "leftColumn": "region_id",
+        "rightColumn": "id"
+      },
+      "hints": [
+        "Продавец ссылается на регион через `region_id`."
+      ],
+      "explanation": "Продавец связан с регионом через `region_id`. Чтобы сравнить продавцов одного региона, ту же таблицу соединяют с собой под алиасами: `sales_reps a JOIN sales_reps b ON a.region_id = b.region_id`."
+    },
+    {
+      "id": "i-self-07",
+      "type": "fix_bug",
+      "title": "Перепутанное направление связи",
+      "description": "Запрос должен вывести сотрудника и его руководителя, но выводит сотрудника и его подчинённых. Исправьте условие.",
+      "difficulty": "medium",
+      "starter": "SELECT e.first_name AS employee, m.first_name AS manager\nFROM employees e\nJOIN employees m ON e.id = m.manager_id;",
+      "solution": "SELECT e.first_name AS employee, m.first_name AS manager FROM employees e JOIN employees m ON m.id = e.manager_id",
+      "hints": [
+        "У сотрудника `e` есть `manager_id`, который указывает на `id` руководителя `m`."
+      ],
+      "explanation": "Направление связи определяет, кто из двух копий таблицы — руководитель."
+    },
+    {
+      "id": "i-self-08",
+      "type": "predict_result",
+      "title": "Сколько пар",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "sql": "SELECT a.name, b.name\nFROM sales_reps a\nJOIN sales_reps b ON a.region_id = b.region_id AND a.id < b.id;",
+      "ask": "rowCount",
+      "hints": [
+        "В каждом регионе по 2 продавца."
+      ],
+      "explanation": "В каждом из 4 регионов два продавца дают одну уникальную пару."
+    },
+    {
+      "id": "i-self-09",
+      "type": "challenge",
+      "title": "Студенты с одного курса",
+      "description": "Найдите пары студентов (`student_a`, `student_b` — имена), которые учились вместе хотя бы на 2 одинаковых курсах (в любом году). Выведите пары без повторов (`a.id < b.id`) и количество общих курсов (`shared`). Отсортируйте по `shared` по убыванию, затем по именам.",
+      "difficulty": "hard",
+      "dataset": "university",
+      "solution": "SELECT sa.full_name AS student_a, sb.full_name AS student_b, COUNT(DISTINCT ea.course_id) AS shared FROM enrollments ea JOIN enrollments eb ON eb.course_id = ea.course_id AND ea.student_id < eb.student_id JOIN students sa ON sa.id = ea.student_id JOIN students sb ON sb.id = eb.student_id GROUP BY ea.student_id, eb.student_id HAVING COUNT(DISTINCT ea.course_id) >= 2 ORDER BY shared DESC, student_a, student_b",
+      "hints": [
+        "Соедините `enrollments` с самой собой по `course_id`.",
+        "Затем сгруппируйте по паре студентов и отфильтруйте через `HAVING`."
+      ],
+      "explanation": "Self join таблицы фактов находит совпадения между разными сущностями."
+    }
+  ]
+}

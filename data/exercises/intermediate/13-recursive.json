@@ -1,0 +1,130 @@
+{
+  "module": "intermediate.recursive",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "i-rec-01",
+      "type": "write_query",
+      "title": "Числа от 1 до 10",
+      "description": "С помощью `WITH RECURSIVE` сгенерируйте числа от 1 до 10 в столбце `n`.",
+      "difficulty": "easy",
+      "solution": "WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 10) SELECT n FROM seq",
+      "hints": [
+        "Якорь — `SELECT 1`, рекурсивная часть — `SELECT n + 1 … WHERE n < 10`."
+      ],
+      "explanation": "Рекурсия продолжается, пока рекурсивная часть возвращает строки."
+    },
+    {
+      "id": "i-rec-02",
+      "type": "write_query",
+      "title": "Календарь января",
+      "description": "Сгенерируйте все даты января 2024 года в столбце `d`.",
+      "difficulty": "easy",
+      "solution": "WITH RECURSIVE days(d) AS (SELECT '2024-01-01' UNION ALL SELECT date(d, '+1 day') FROM days WHERE d < '2024-01-31') SELECT d FROM days",
+      "hints": [
+        "Каждый шаг: `date(d, '+1 day')`."
+      ],
+      "explanation": "Рекурсивный календарь пригодится, чтобы показать дни без данных."
+    },
+    {
+      "id": "i-rec-03",
+      "type": "write_query",
+      "title": "Все подчинённые CTO",
+      "description": "Найдите всех прямых и косвенных подчинённых сотрудника с должностью `CTO`. Выведите `id`, имя и уровень `depth` (1 — прямые подчинённые). Отсортируйте по `depth`, затем по `id`.",
+      "difficulty": "medium",
+      "solution": "WITH RECURSIVE sub(id, first_name, depth) AS (SELECT e.id, e.first_name, 1 FROM employees e WHERE e.manager_id = (SELECT id FROM employees WHERE job_title = 'CTO') UNION ALL SELECT e.id, e.first_name, s.depth + 1 FROM employees e JOIN sub s ON e.manager_id = s.id) SELECT id, first_name, depth FROM sub ORDER BY depth, id",
+      "hints": [
+        "Якорь — прямые подчинённые CTO.",
+        "Рекурсивная часть: сотрудники, чей `manager_id` есть среди уже найденных."
+      ],
+      "explanation": "Каждый шаг рекурсии спускается на один уровень иерархии."
+    },
+    {
+      "id": "i-rec-04",
+      "type": "write_query",
+      "title": "Цепочка до CEO",
+      "description": "Для сотрудника с `id = 20` выведите цепочку руководителей до самого верха: `id`, имя и `level` (0 — сам сотрудник). Отсортируйте по `level`.",
+      "difficulty": "medium",
+      "solution": "WITH RECURSIVE chain(id, first_name, manager_id, level) AS (SELECT id, first_name, manager_id, 0 FROM employees WHERE id = 20 UNION ALL SELECT e.id, e.first_name, e.manager_id, c.level + 1 FROM employees e JOIN chain c ON e.id = c.manager_id) SELECT id, first_name, level FROM chain ORDER BY level",
+      "hints": [
+        "Теперь двигаемся вверх: `e.id = c.manager_id`."
+      ],
+      "explanation": "Направление обхода определяется условием соединения в рекурсивной части."
+    },
+    {
+      "id": "i-rec-05",
+      "type": "write_query",
+      "title": "Дерево категорий",
+      "description": "Постройте путь каждой категории от корня: столбцы `id` и `path` вида `Electronics > Laptops`. Отсортируйте по `path`.",
+      "difficulty": "medium",
+      "dataset": "ecommerce",
+      "solution": "WITH RECURSIVE tree(id, path) AS (SELECT id, name FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.id, t.path || ' > ' || c.name FROM categories c JOIN tree t ON c.parent_id = t.id) SELECT id, path FROM tree ORDER BY path",
+      "hints": [
+        "Якорь — корневые категории (`parent_id IS NULL`).",
+        "Накапливайте путь конкатенацией."
+      ],
+      "explanation": "Строковый путь — простой способ представить иерархию в одной строке."
+    },
+    {
+      "id": "i-rec-06",
+      "type": "write_query",
+      "title": "Все пререквизиты курса",
+      "description": "Найдите все курсы, которые нужно пройти (прямо или через цепочку) перед курсом `Machine Learning` (`id = 15`). Выведите `id` курсов-пререквизитов без повторов, отсортированные по возрастанию.",
+      "difficulty": "hard",
+      "dataset": "university",
+      "solution": "WITH RECURSIVE req(id) AS (SELECT prerequisite_id FROM prerequisites WHERE course_id = 15 UNION SELECT p.prerequisite_id FROM prerequisites p JOIN req r ON p.course_id = r.id) SELECT id FROM req ORDER BY id",
+      "hints": [
+        "Использование `UNION` вместо `UNION ALL` убирает повторы и защищает от циклов."
+      ],
+      "explanation": "Обход графа зависимостей — типичное применение рекурсивных CTE."
+    },
+    {
+      "id": "i-rec-07",
+      "type": "fix_bug",
+      "title": "Бесконечная рекурсия",
+      "description": "Запрос должен вывести числа от 1 до 5, но выполняется бесконечно (тренажёр прервёт его по таймауту). Исправьте.",
+      "difficulty": "easy",
+      "starter": "WITH RECURSIVE seq(n) AS (\n  SELECT 1\n  UNION ALL\n  SELECT n + 1 FROM seq\n)\nSELECT n FROM seq;",
+      "solution": "WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 5) SELECT n FROM seq",
+      "alt": [
+        "WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq) SELECT n FROM seq LIMIT 5"
+      ],
+      "hints": [
+        "В рекурсивной части нет условия остановки."
+      ],
+      "explanation": "Без условия `WHERE n < 5` рекурсивная часть всегда возвращает строку."
+    },
+    {
+      "id": "i-rec-08",
+      "type": "predict_result",
+      "title": "Сумма последовательности",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "WITH RECURSIVE s(n) AS (\n  SELECT 1 UNION ALL SELECT n + 2 FROM s WHERE n < 9\n)\nSELECT SUM(n) FROM s;",
+      "ask": "value",
+      "options": [
+        "25",
+        "45",
+        "16",
+        "36"
+      ],
+      "hints": [
+        "Последовательность: 1, 3, 5, 7, 9."
+      ],
+      "explanation": "1 + 3 + 5 + 7 + 9 = 25. Рекурсия останавливается, когда n достигает 9."
+    },
+    {
+      "id": "i-rec-09",
+      "type": "challenge",
+      "title": "Размер команды",
+      "description": "Для каждого руководителя (у кого есть хотя бы один подчинённый) посчитайте размер всей команды — всех прямых и косвенных подчинённых. Выведите имя руководителя (`manager`) и размер команды (`team_size`). Отсортируйте по размеру по убыванию, затем по имени.",
+      "difficulty": "hard",
+      "solution": "WITH RECURSIVE tree(root_id, id) AS (SELECT manager_id, id FROM employees WHERE manager_id IS NOT NULL UNION ALL SELECT t.root_id, e.id FROM employees e JOIN tree t ON e.manager_id = t.id) SELECT m.first_name AS manager, COUNT(*) AS team_size FROM tree t JOIN employees m ON m.id = t.root_id GROUP BY t.root_id, m.first_name ORDER BY team_size DESC, manager",
+      "hints": [
+        "Стартуйте с пар (руководитель, прямой подчинённый) и распространяйте `root_id` вниз.",
+        "Затем сгруппируйте по `root_id`."
+      ],
+      "explanation": "Перенос корня через рекурсию позволяет за один запрос посчитать размеры всех поддеревьев."
+    }
+  ]
+}

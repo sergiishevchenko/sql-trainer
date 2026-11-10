@@ -1,0 +1,146 @@
+{
+  "module": "intermediate.union-all",
+  "dataset": "banking",
+  "exercises": [
+    {
+      "id": "i-unionall-01",
+      "type": "write_query",
+      "title": "Журнал движений",
+      "description": "Соберите единый журнал: пополнения (`deposit`) с меткой `in` и снятия (`withdrawal`) с меткой `out`. Выведите метку `direction`, дату и сумму. Дубликаты сохранять обязательно. Отсортируйте по дате, затем по сумме.",
+      "difficulty": "easy",
+      "solution": "SELECT 'in' AS direction, tx_date, amount FROM transactions WHERE tx_type = 'deposit' UNION ALL SELECT 'out', tx_date, amount FROM transactions WHERE tx_type = 'withdrawal' ORDER BY tx_date, amount",
+      "hints": [
+        "`UNION ALL` не удаляет дубликаты."
+      ],
+      "explanation": "В журнале операций одинаковые строки — разные операции, поэтому нужен `UNION ALL`."
+    },
+    {
+      "id": "i-unionall-02",
+      "type": "write_query",
+      "title": "Итоги по направлениям",
+      "description": "Посчитайте сумму пополнений и снятий через объединение: в подзапросе соберите `UNION ALL` строк с меткой `kind` (`in` для сумм больше 0, `out` для меньше 0) и суммой, затем сгруппируйте. Выведите `kind` и `total` (округлить до 2 знаков), отсортируйте по `kind`.",
+      "difficulty": "medium",
+      "solution": "SELECT kind, ROUND(SUM(amount), 2) AS total FROM (SELECT 'in' AS kind, amount FROM transactions WHERE amount > 0 UNION ALL SELECT 'out', amount FROM transactions WHERE amount < 0) GROUP BY kind ORDER BY kind",
+      "alt": [
+        "SELECT CASE WHEN amount > 0 THEN 'in' ELSE 'out' END AS kind, ROUND(SUM(amount), 2) AS total FROM transactions WHERE amount <> 0 GROUP BY kind ORDER BY kind"
+      ],
+      "hints": [
+        "Объединение помещается в `FROM (...)`."
+      ],
+      "explanation": "Если бы использовался `UNION`, совпадающие суммы склеились бы и итог был бы неверным."
+    },
+    {
+      "id": "i-unionall-03",
+      "type": "write_query",
+      "title": "Клиенты с заказами и отзывами",
+      "description": "С помощью `INTERSECT` выведите `id` клиентов, у которых есть и заказ, и отзыв.",
+      "difficulty": "easy",
+      "dataset": "ecommerce",
+      "solution": "SELECT customer_id FROM orders INTERSECT SELECT customer_id FROM reviews",
+      "alt": [
+        "SELECT DISTINCT o.customer_id FROM orders o WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.customer_id = o.customer_id)"
+      ],
+      "hints": [
+        "`INTERSECT` — пересечение двух наборов."
+      ],
+      "explanation": "`INTERSECT` оставляет значения, присутствующие в обоих результатах."
+    },
+    {
+      "id": "i-unionall-04",
+      "type": "write_query",
+      "title": "Клиенты без отзывов",
+      "description": "С помощью `EXCEPT` выведите `id` клиентов, которые делали заказы, но не оставили ни одного отзыва.",
+      "difficulty": "easy",
+      "dataset": "ecommerce",
+      "solution": "SELECT customer_id FROM orders EXCEPT SELECT customer_id FROM reviews",
+      "hints": [
+        "`EXCEPT` — разность наборов."
+      ],
+      "explanation": "`EXCEPT` возвращает строки первого набора, которых нет во втором (без дубликатов)."
+    },
+    {
+      "id": "i-unionall-05",
+      "type": "write_query",
+      "title": "Курсы без пререквизитов",
+      "description": "Выведите `id` курсов, у которых нет обязательных предшествующих курсов (нет строк в `prerequisites` с таким `course_id`). Используйте `EXCEPT`.",
+      "difficulty": "medium",
+      "dataset": "university",
+      "solution": "SELECT id FROM courses EXCEPT SELECT course_id FROM prerequisites",
+      "hints": [
+        "Из всех курсов вычтите курсы, у которых есть пререквизиты."
+      ],
+      "explanation": "`EXCEPT` удобен для поиска элементов без связей."
+    },
+    {
+      "id": "i-unionall-06",
+      "type": "fix_bug",
+      "title": "Пропавшие операции",
+      "description": "Запрос должен посчитать общее количество операций пополнения и снятия, но результат занижен: операции с одинаковой суммой склеиваются.",
+      "difficulty": "medium",
+      "starter": "SELECT COUNT(*) FROM (\n  SELECT tx_type, amount FROM transactions WHERE tx_type = 'deposit'\n  UNION\n  SELECT tx_type, amount FROM transactions WHERE tx_type = 'withdrawal'\n);",
+      "solution": "SELECT COUNT(*) FROM (SELECT tx_type, amount FROM transactions WHERE tx_type = 'deposit' UNION ALL SELECT tx_type, amount FROM transactions WHERE tx_type = 'withdrawal')",
+      "alt": [
+        "SELECT COUNT(*) FROM transactions WHERE tx_type IN ('deposit', 'withdrawal')"
+      ],
+      "hints": [
+        "Какой оператор сохраняет дубликаты?"
+      ],
+      "explanation": "Пополнения с одинаковой суммой — разные операции. `UNION` склеивает их, `UNION ALL` — нет."
+    },
+    {
+      "id": "i-unionall-07",
+      "type": "predict_result",
+      "title": "UNION ALL считает всё",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT COUNT(*) FROM (\n  SELECT 1 AS x UNION ALL SELECT 1 UNION ALL SELECT 2\n);",
+      "ask": "value",
+      "options": [
+        "3",
+        "2",
+        "1"
+      ],
+      "hints": [
+        "Дубликаты не удаляются."
+      ],
+      "explanation": "`UNION ALL` сохраняет все 3 строки."
+    },
+    {
+      "id": "i-unionall-08",
+      "type": "choose_query",
+      "title": "Оператор для пересечения",
+      "description": "Какой запрос выведет города, где есть и отделение банка, и хотя бы один клиент?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT city FROM branches INTERSECT SELECT city FROM clients",
+        "SELECT city FROM branches UNION SELECT city FROM clients",
+        "SELECT city FROM branches EXCEPT SELECT city FROM clients",
+        "SELECT city FROM branches UNION ALL SELECT city FROM clients"
+      ],
+      "correct": 0,
+      "hints": [
+        "Нужны значения, присутствующие в обоих наборах."
+      ],
+      "explanation": "`INTERSECT` — пересечение, `UNION` — объединение, `EXCEPT` — разность."
+    },
+    {
+      "id": "i-unionall-09",
+      "type": "explain_query",
+      "title": "EXCEPT и порядок",
+      "description": "Чем отличаются `A EXCEPT B` и `B EXCEPT A`?",
+      "difficulty": "medium",
+      "sql": "SELECT city FROM clients\nEXCEPT\nSELECT city FROM branches;",
+      "options": [
+        "Порядок важен: запрос вернёт города клиентов, в которых нет отделений, а `B EXCEPT A` — города отделений без клиентов",
+        "Ничем: EXCEPT симметричен",
+        "Запрос вернёт города, общие для обеих таблиц",
+        "Запрос вернёт все города обеих таблиц"
+      ],
+      "correct": 0,
+      "hints": [
+        "Разность множеств не коммутативна."
+      ],
+      "explanation": "`EXCEPT` вычитает второй набор из первого, поэтому перестановка меняет результат."
+    }
+  ]
+}

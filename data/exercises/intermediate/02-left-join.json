@@ -1,0 +1,126 @@
+{
+  "module": "intermediate.left-join",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "i-left-01",
+      "type": "write_query",
+      "title": "Все клиенты и их заказы",
+      "description": "Выведите имя каждого клиента и `id` его заказов. Клиенты без заказов тоже должны попасть в результат (с NULL вместо `id` заказа).",
+      "difficulty": "easy",
+      "solution": "SELECT c.first_name, o.id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id",
+      "hints": ["`LEFT JOIN` сохраняет все строки левой таблицы."],
+      "explanation": "Для клиентов без заказов столбцы из `orders` заполняются NULL."
+    },
+    {
+      "id": "i-left-02",
+      "type": "write_query",
+      "title": "Клиенты без заказов",
+      "description": "Выведите `id`, имя и фамилию клиентов, которые не сделали ни одного заказа.",
+      "difficulty": "easy",
+      "solution": "SELECT c.id, c.first_name, c.last_name FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL",
+      "alt": ["SELECT id, first_name, last_name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)"],
+      "hints": ["После `LEFT JOIN` у клиентов без заказов `o.id` равен NULL."],
+      "explanation": "Шаблон «LEFT JOIN + IS NULL» находит строки без пары (anti-join)."
+    },
+    {
+      "id": "i-left-03",
+      "type": "write_query",
+      "title": "Количество заказов с нулями",
+      "description": "Для каждого клиента выведите `id`, имя и количество заказов (`orders_count`), включая клиентов с нулём заказов. Отсортируйте по количеству по убыванию, затем по `id`.",
+      "difficulty": "medium",
+      "solution": "SELECT c.id, c.first_name, COUNT(o.id) AS orders_count FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.first_name ORDER BY orders_count DESC, c.id",
+      "hints": ["`COUNT(*)` посчитает строку с NULL как 1 — считайте `COUNT(o.id)`."],
+      "explanation": "`COUNT(столбец)` пропускает NULL, поэтому клиенты без заказов получают 0."
+    },
+    {
+      "id": "i-left-04",
+      "type": "join_builder",
+      "title": "Товары без отзывов тоже",
+      "description": "Настройте соединение, чтобы вывести **все** товары и оценки из отзывов о них. Товары без отзывов должны остаться с NULL.",
+      "difficulty": "easy",
+      "tables": ["products", "reviews", "customers"],
+      "select": "products.name, reviews.rating",
+      "answer": { "left": "products", "right": "reviews", "join": "LEFT", "leftColumn": "id", "rightColumn": "product_id" },
+      "hints": ["Все строки нужны из таблицы товаров — она должна быть слева."],
+      "explanation": "`products LEFT JOIN reviews` сохраняет товары без отзывов."
+    },
+    {
+      "id": "i-left-05",
+      "type": "write_query",
+      "title": "Отделы без сотрудников",
+      "description": "Выведите названия отделов, в которых нет ни одного сотрудника.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT d.name FROM departments d LEFT JOIN employees e ON e.department_id = d.id WHERE e.id IS NULL",
+      "allowEmpty": true,
+      "hints": ["Anti-join: `LEFT JOIN` + проверка на NULL."],
+      "explanation": "Если в отделе нет сотрудников, после `LEFT JOIN` столбцы `e.*` будут NULL. В текущих данных таких отделов может не быть — тогда результат пустой."
+    },
+    {
+      "id": "i-left-06",
+      "type": "write_query",
+      "title": "Средний рейтинг с нулями",
+      "description": "Для каждого товара выведите название и средний рейтинг отзывов (`avg_rating`, округлить до 2 знаков). Для товаров без отзывов выведите 0. Отсортируйте по названию.",
+      "difficulty": "medium",
+      "solution": "SELECT p.name, COALESCE(ROUND(AVG(r.rating), 2), 0) AS avg_rating FROM products p LEFT JOIN reviews r ON r.product_id = p.id GROUP BY p.id, p.name ORDER BY p.name",
+      "alt": ["SELECT p.name, ROUND(COALESCE(AVG(r.rating), 0), 2) AS avg_rating FROM products p LEFT JOIN reviews r ON r.product_id = p.id GROUP BY p.id, p.name ORDER BY p.name"],
+      "hints": ["`AVG` от одних NULL — NULL. Замените его через `COALESCE`."],
+      "explanation": "`LEFT JOIN` + `GROUP BY` + `COALESCE` — стандартный способ получить отчёт без «дыр»."
+    },
+    {
+      "id": "i-left-07",
+      "type": "fix_bug",
+      "title": "WHERE убивает LEFT JOIN",
+      "description": "Нужно вывести **всех** клиентов и количество их доставленных заказов (0, если таких нет). Но клиенты без доставленных заказов пропадают. Исправьте.",
+      "difficulty": "hard",
+      "starter": "SELECT c.id, COUNT(o.id) AS delivered\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'delivered'\nGROUP BY c.id;",
+      "solution": "SELECT c.id, COUNT(o.id) AS delivered FROM customers c LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'delivered' GROUP BY c.id",
+      "alt": ["SELECT c.id, SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) AS delivered FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id"],
+      "hints": ["Условие на правую таблицу в `WHERE` отбрасывает строки с NULL.", "Перенесите условие в `ON`."],
+      "explanation": "Условие в `ON` ограничивает присоединяемые строки, но не удаляет строки левой таблицы."
+    },
+    {
+      "id": "i-left-08",
+      "type": "predict_result",
+      "title": "Размер LEFT JOIN",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT d.name, p.name\nFROM departments d\nLEFT JOIN projects p ON p.department_id = d.id;",
+      "ask": "rowCount",
+      "hints": ["Отдел с N проектами даёт N строк, отдел без проектов — одну."],
+      "explanation": "Количество строк = сумма проектов по отделам + число отделов без проектов."
+    },
+    {
+      "id": "i-left-09",
+      "type": "choose_query",
+      "title": "Студенты без записей",
+      "description": "Какой запрос выведет студентов, не записанных ни на один курс?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT s.full_name FROM students s LEFT JOIN enrollments e ON e.student_id = s.id WHERE e.student_id IS NULL",
+        "SELECT s.full_name FROM students s JOIN enrollments e ON e.student_id = s.id WHERE e.student_id IS NULL",
+        "SELECT s.full_name FROM students s LEFT JOIN enrollments e ON e.student_id = s.id WHERE e.grade IS NULL",
+        "SELECT s.full_name FROM enrollments e LEFT JOIN students s ON e.student_id = s.id WHERE s.id IS NULL"
+      ],
+      "correct": 0,
+      "allowEmpty": true,
+      "hints": ["`grade` может быть NULL и у записанных студентов."],
+      "explanation": "Проверять на NULL нужно столбец, который гарантированно заполнен при наличии пары, — ключ соединения."
+    },
+    {
+      "id": "i-left-10",
+      "type": "business_case",
+      "title": "Нагрузка преподавателей",
+      "description": "Деканат просит список **всех** преподавателей: имя (`professor`), количество курсов (`courses`) и суммарное число кредитов (`credits`, 0 если курсов нет). Отсортируйте по числу курсов по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "dataset": "university",
+      "solution": "SELECT p.full_name AS professor, COUNT(c.id) AS courses, COALESCE(SUM(c.credits), 0) AS credits FROM professors p LEFT JOIN courses c ON c.professor_id = p.id GROUP BY p.id, p.full_name ORDER BY courses DESC, professor",
+      "alt": ["SELECT p.full_name AS professor, COUNT(c.id) AS courses, TOTAL(c.credits) AS credits FROM professors p LEFT JOIN courses c ON c.professor_id = p.id GROUP BY p.id, p.full_name ORDER BY courses DESC, professor"],
+      "hints": ["Все преподаватели — значит, `professors` слева.", "`SUM` от NULL — NULL, используйте `COALESCE`."],
+      "explanation": "`LEFT JOIN` гарантирует, что в отчёт попадут преподаватели без курсов."
+    }
+  ]
+}

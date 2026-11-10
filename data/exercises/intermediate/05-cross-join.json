@@ -1,0 +1,118 @@
+{
+  "module": "intermediate.cross-join",
+  "dataset": "sales",
+  "exercises": [
+    {
+      "id": "i-cross-01",
+      "type": "write_query",
+      "title": "Все комбинации",
+      "description": "Выведите все комбинации названий регионов и категорий продуктов (уникальных значений `products.category`). Отсортируйте по региону, затем по категории.",
+      "difficulty": "easy",
+      "solution": "SELECT r.name, c.category FROM regions r CROSS JOIN (SELECT DISTINCT category FROM products) c ORDER BY r.name, c.category",
+      "alt": ["SELECT DISTINCT r.name, p.category FROM regions r CROSS JOIN products p ORDER BY r.name, p.category"],
+      "hints": ["Сначала получите уникальные категории, затем перемножьте с регионами."],
+      "explanation": "`CROSS JOIN` строит декартово произведение двух наборов."
+    },
+    {
+      "id": "i-cross-02",
+      "type": "join_builder",
+      "title": "Продавцы и продукты",
+      "description": "Постройте таблицу всех возможных пар «продавец — продукт».",
+      "difficulty": "easy",
+      "tables": ["sales_reps", "products", "regions"],
+      "select": "sales_reps.name, products.name",
+      "answer": { "left": "sales_reps", "right": "products", "join": "CROSS" },
+      "hints": ["Нужны все пары без условия соединения."],
+      "explanation": "8 продавцов × 8 продуктов = 64 пары."
+    },
+    {
+      "id": "i-cross-03",
+      "type": "write_query",
+      "title": "Сетка с нулями",
+      "description": "Для каждой пары «продавец — продукт» посчитайте количество проданных единиц (`units`, 0 если продаж не было). Выведите имя продавца, название продукта и `units`. Отсортируйте по имени продавца, затем по продукту.",
+      "difficulty": "hard",
+      "solution": "SELECT sr.name, p.name, COALESCE(SUM(s.quantity), 0) AS units FROM sales_reps sr CROSS JOIN products p LEFT JOIN sales s ON s.rep_id = sr.id AND s.product_id = p.id GROUP BY sr.id, sr.name, p.id, p.name ORDER BY sr.name, p.name",
+      "alt": ["SELECT sr.name, p.name, TOTAL(s.quantity) AS units FROM sales_reps sr CROSS JOIN products p LEFT JOIN sales s ON s.rep_id = sr.id AND s.product_id = p.id GROUP BY sr.id, sr.name, p.id, p.name ORDER BY sr.name, p.name"],
+      "hints": ["Сначала `CROSS JOIN` для всех пар, затем `LEFT JOIN` фактов.", "Условие `LEFT JOIN` должно связывать обе стороны пары."],
+      "explanation": "Сетка из `CROSS JOIN` гарантирует наличие всех комбинаций, даже без продаж."
+    },
+    {
+      "id": "i-cross-04",
+      "type": "write_query",
+      "title": "Таблица умножения",
+      "description": "Сгенерируйте таблицу умножения 1–3 × 1–3: столбцы `a`, `b`, `product`. Используйте `CROSS JOIN` подзапроса `SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3` с самим собой. Отсортируйте по `a`, затем по `b`.",
+      "difficulty": "medium",
+      "solution": "SELECT x.n AS a, y.n AS b, x.n * y.n AS product FROM (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) x CROSS JOIN (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) y ORDER BY a, b",
+      "hints": ["Дайте подзапросам разные алиасы."],
+      "explanation": "Перемножение набора с самим собой даёт все упорядоченные пары."
+    },
+    {
+      "id": "i-cross-05",
+      "type": "write_query",
+      "title": "Пары команд",
+      "description": "Регионы играют турнир «каждый с каждым». Выведите все пары регионов `home`, `away` без повторов и без игры региона с самим собой (`home` идёт раньше `away` по `id`). Отсортируйте по `home`, затем по `away`.",
+      "difficulty": "medium",
+      "solution": "SELECT a.name AS home, b.name AS away FROM regions a CROSS JOIN regions b WHERE a.id < b.id ORDER BY home, away",
+      "alt": ["SELECT a.name AS home, b.name AS away FROM regions a JOIN regions b ON a.id < b.id ORDER BY home, away"],
+      "hints": ["Условие `a.id < b.id` убирает и зеркальные пары, и пары с самим собой."],
+      "explanation": "Из 16 пар остаются 6 уникальных сочетаний."
+    },
+    {
+      "id": "i-cross-06",
+      "type": "fix_bug",
+      "title": "Забытое условие",
+      "description": "Запрос должен вывести продажи с именем продавца, но строк в 8 раз больше, чем продаж. Исправьте.",
+      "difficulty": "easy",
+      "starter": "SELECT s.id, sr.name\nFROM sales s, sales_reps sr;",
+      "solution": "SELECT s.id, sr.name FROM sales s JOIN sales_reps sr ON sr.id = s.rep_id",
+      "alt": ["SELECT s.id, sr.name FROM sales s, sales_reps sr WHERE sr.id = s.rep_id"],
+      "hints": ["Перечисление таблиц через запятую без условия — это `CROSS JOIN`."],
+      "explanation": "Без условия связи каждая продажа соединяется с каждым продавцом."
+    },
+    {
+      "id": "i-cross-07",
+      "type": "predict_result",
+      "title": "Размер произведения",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT * FROM regions CROSS JOIN products;",
+      "ask": "rowCount",
+      "options": ["12", "32", "4", "8"],
+      "hints": ["Перемножьте количество строк в таблицах."],
+      "explanation": "4 региона × 8 продуктов = 32 строки."
+    },
+    {
+      "id": "i-cross-08",
+      "type": "choose_query",
+      "title": "Календарь продавцов",
+      "description": "Нужна сетка «продавец × месяц плана» для всех продавцов и всех месяцев из `monthly_targets`. Какой запрос её строит?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT sr.name, m.month FROM sales_reps sr CROSS JOIN (SELECT DISTINCT month FROM monthly_targets) m",
+        "SELECT sr.name, mt.month FROM sales_reps sr CROSS JOIN monthly_targets mt",
+        "SELECT sr.name, mt.month FROM sales_reps sr JOIN monthly_targets mt ON mt.rep_id = sr.id WHERE mt.month IS NULL",
+        "SELECT sr.name, mt.month FROM sales_reps sr LEFT JOIN monthly_targets mt ON 1 = 0"
+      ],
+      "correct": 0,
+      "hints": ["`monthly_targets` содержит по строке на продавца и месяц — месяцы повторяются."],
+      "explanation": "Перед `CROSS JOIN` нужно получить уникальные месяцы, иначе пары размножатся."
+    },
+    {
+      "id": "i-cross-09",
+      "type": "explain_query",
+      "title": "Запятая в FROM",
+      "description": "Что вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT r.name, p.name\nFROM regions r, products p\nWHERE p.category = 'Hardware';",
+      "options": [
+        "Все пары «регион — продукт категории Hardware»",
+        "Только продукты Hardware без регионов",
+        "Ошибку: нет условия соединения",
+        "Регионы, где продавали Hardware"
+      ],
+      "correct": 0,
+      "hints": ["Запятая между таблицами — неявный `CROSS JOIN`."],
+      "explanation": "`WHERE` фильтрует продукты, но связи между регионом и продуктом нет — получаются все пары."
+    }
+  ]
+}
