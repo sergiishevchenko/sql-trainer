@@ -1,0 +1,145 @@
+{
+  "module": "fundamentals.sum",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-sum-01",
+      "type": "write_query",
+      "title": "Всего товаров на складе",
+      "description": "Посчитайте суммарный остаток (`stock`) всех товаров.",
+      "difficulty": "easy",
+      "solution": "SELECT SUM(stock) FROM products",
+      "hints": ["`SUM` складывает значения столбца."],
+      "explanation": "`SUM(stock)` возвращает одно число — сумму остатков."
+    },
+    {
+      "id": "f-sum-02",
+      "type": "write_query",
+      "title": "Выручка",
+      "description": "Посчитайте общую выручку по всем позициям заказов: сумму `quantity * unit_price`. Назовите столбец `revenue`.",
+      "difficulty": "easy",
+      "solution": "SELECT SUM(quantity * unit_price) AS revenue FROM order_items",
+      "hints": ["Внутри `SUM` можно писать выражение."],
+      "explanation": "Выражение вычисляется для каждой строки, затем результаты складываются."
+    },
+    {
+      "id": "f-sum-03",
+      "type": "write_query",
+      "title": "Стоимость доставки",
+      "description": "Посчитайте общую стоимость доставки по доставленным заказам (`status = 'delivered'`).",
+      "difficulty": "easy",
+      "solution": "SELECT SUM(shipping_cost) FROM orders WHERE status = 'delivered'",
+      "hints": ["Отфильтруйте заказы, затем просуммируйте."],
+      "explanation": "Сумма считается только по строкам, прошедшим `WHERE`."
+    },
+    {
+      "id": "f-sum-04",
+      "type": "write_query",
+      "title": "Фонд оплаты труда",
+      "description": "Посчитайте годовой фонд оплаты труда отдела с `department_id = 1` (сумма зарплат).",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT SUM(salary) FROM employees WHERE department_id = 1",
+      "hints": ["`SUM(salary)` с фильтром по отделу."],
+      "explanation": "Агрегат применяется к сотрудникам одного отдела."
+    },
+    {
+      "id": "f-sum-05",
+      "type": "write_query",
+      "title": "Пополнения и списания",
+      "description": "Одним запросом посчитайте сумму пополнений (`deposits`, тип `deposit`) и сумму снятий (`withdrawals`, тип `withdrawal`). Снятия хранятся с отрицательным знаком.",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "solution": "SELECT SUM(CASE WHEN tx_type = 'deposit' THEN amount ELSE 0 END) AS deposits, SUM(CASE WHEN tx_type = 'withdrawal' THEN amount ELSE 0 END) AS withdrawals FROM transactions",
+      "alt": ["SELECT TOTAL(CASE WHEN tx_type = 'deposit' THEN amount END) AS deposits, TOTAL(CASE WHEN tx_type = 'withdrawal' THEN amount END) AS withdrawals FROM transactions"],
+      "hints": ["Используйте `CASE` внутри `SUM`."],
+      "explanation": "Условная сумма позволяет посчитать несколько показателей за один проход."
+    },
+    {
+      "id": "f-sum-06",
+      "type": "write_query",
+      "title": "Сборы режиссёра",
+      "description": "Посчитайте суммарные кассовые сборы (`box_office_musd`) фильмов режиссёра с `director_id = 1`, округлив до одного знака после запятой.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT ROUND(SUM(box_office_musd), 1) FROM movies WHERE director_id = 1",
+      "hints": ["`ROUND(x, 1)` округляет до одного знака."],
+      "explanation": "NULL-значения сборов при суммировании пропускаются."
+    },
+    {
+      "id": "f-sum-07",
+      "type": "write_query",
+      "title": "Выручка со скидкой",
+      "description": "В таблице `sales` хранятся продажи. Посчитайте суммарное количество проданных единиц (`units`) и выручку со скидкой (`revenue`) по продукту с `product_id = 1`. Цена продукта — 400, скидка (`discount`) — доля от 0 до 1.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "SELECT SUM(quantity) AS units, SUM(quantity * 400 * (1 - discount)) AS revenue FROM sales WHERE product_id = 1",
+      "hints": ["Цена со скидкой: `400 * (1 - discount)`."],
+      "explanation": "Выражение со скидкой вычисляется для каждой продажи, затем суммируется."
+    },
+    {
+      "id": "f-sum-08",
+      "type": "fix_bug",
+      "title": "Сумма вместо количества",
+      "description": "Запрос должен вернуть общее количество проданных единиц товара, но возвращает число строк.",
+      "difficulty": "easy",
+      "starter": "SELECT COUNT(quantity)\nFROM order_items;",
+      "solution": "SELECT SUM(quantity) FROM order_items",
+      "hints": ["Нужно сложить значения, а не посчитать строки."],
+      "explanation": "`COUNT` считает строки, а `SUM` складывает значения."
+    },
+    {
+      "id": "f-sum-09",
+      "type": "predict_result",
+      "title": "SUM от пустого набора",
+      "description": "Что вернёт запрос, если таких транзакций нет?",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "sql": "SELECT SUM(amount) FROM transactions WHERE tx_type = 'refund';",
+      "ask": "value",
+      "options": ["0", "NULL", "Ошибка"],
+      "hints": ["В отличие от `COUNT`, `SUM` по пустому набору не возвращает ноль."],
+      "explanation": "`SUM` от пустого набора возвращает NULL. Используйте `COALESCE(SUM(x), 0)` или `TOTAL(x)`, если нужен 0."
+    },
+    {
+      "id": "f-sum-10",
+      "type": "choose_query",
+      "title": "Ноль вместо NULL",
+      "description": "Какой запрос вернёт 0, если клиент с `id = 999` не делал заказов?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT COALESCE(SUM(shipping_cost), 0) FROM orders WHERE customer_id = 999",
+        "SELECT SUM(COALESCE(shipping_cost, 0)) FROM orders WHERE customer_id = 999",
+        "SELECT SUM(shipping_cost) FROM orders WHERE customer_id = 999",
+        "SELECT COUNT(shipping_cost) + NULL FROM orders WHERE customer_id = 999"
+      ],
+      "correct": 0,
+      "hints": ["Если строк нет, `COALESCE` внутри `SUM` ни разу не вызывается."],
+      "explanation": "Заменять NULL нужно у результата агрегата, а не у отдельных значений."
+    },
+    {
+      "id": "f-sum-11",
+      "type": "fill_blank",
+      "title": "Бюджет проектов",
+      "description": "Посчитайте суммарный бюджет проектов, которые ещё не завершены.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "template": "SELECT {{1}}(budget)\nFROM projects\nWHERE end_date {{2}};",
+      "answers": ["SUM", "IS NULL"],
+      "choices": [["SUM", "COUNT", "MAX", "AVG"], ["IS NULL", "IS NOT NULL", "= NULL"]],
+      "hints": ["У незавершённого проекта нет даты окончания."],
+      "explanation": "`SUM(budget)` по проектам с `end_date IS NULL`."
+    },
+    {
+      "id": "f-sum-12",
+      "type": "business_case",
+      "title": "Отчёт по складу",
+      "description": "Менеджер склада просит одной строкой показать:\n\n- `positions` — количество товарных позиций;\n- `units` — общее количество единиц на складе;\n- `stock_value` — стоимость всего склада по ценам продажи, округлённую до целого;\n- `out_of_stock` — сколько позиций закончилось (`stock = 0`).",
+      "difficulty": "medium",
+      "solution": "SELECT COUNT(*) AS positions, SUM(stock) AS units, ROUND(SUM(price * stock)) AS stock_value, SUM(stock = 0) AS out_of_stock FROM products",
+      "alt": ["SELECT COUNT(*) AS positions, SUM(stock) AS units, ROUND(SUM(price * stock)) AS stock_value, SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END) AS out_of_stock FROM products"],
+      "hints": ["Все четыре показателя — агрегаты по таблице `products`.", "Количество закончившихся позиций — условная сумма."],
+      "explanation": "Несколько агрегатов в одном запросе дают компактный отчёт за один проход по таблице."
+    }
+  ]
+}

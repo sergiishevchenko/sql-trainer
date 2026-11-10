@@ -1,0 +1,153 @@
+{
+  "module": "fundamentals.min-max",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-minmax-01",
+      "type": "write_query",
+      "title": "Диапазон цен",
+      "description": "Выведите минимальную (`min_price`) и максимальную (`max_price`) цену товаров.",
+      "difficulty": "easy",
+      "solution": "SELECT MIN(price) AS min_price, MAX(price) AS max_price FROM products",
+      "hints": ["Два агрегата через запятую."],
+      "explanation": "`MIN` и `MAX` можно вычислять в одном запросе."
+    },
+    {
+      "id": "f-minmax-02",
+      "type": "write_query",
+      "title": "Первый и последний заказ",
+      "description": "Выведите дату самого первого и самого последнего заказа.",
+      "difficulty": "easy",
+      "solution": "SELECT MIN(order_date), MAX(order_date) FROM orders",
+      "hints": ["Даты в ISO-формате сравниваются как строки."],
+      "explanation": "Строки `YYYY-MM-DD` упорядочены так же, как даты, поэтому `MIN`/`MAX` работают корректно."
+    },
+    {
+      "id": "f-minmax-03",
+      "type": "write_query",
+      "title": "Разброс зарплат",
+      "description": "Посчитайте разницу между максимальной и минимальной зарплатой сотрудников. Назовите столбец `spread`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT MAX(salary) - MIN(salary) AS spread FROM employees",
+      "hints": ["Агрегаты можно использовать в арифметике."],
+      "explanation": "Выражение вычисляется после того, как найдены оба агрегата."
+    },
+    {
+      "id": "f-minmax-04",
+      "type": "write_query",
+      "title": "Первое имя по алфавиту",
+      "description": "Выведите полное имя актёра, которое идёт первым по алфавиту.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT MIN(name) FROM actors",
+      "alt": ["SELECT name FROM actors ORDER BY name LIMIT 1"],
+      "hints": ["`MIN` работает и со строками."],
+      "explanation": "Для строк `MIN` возвращает лексикографически наименьшее значение."
+    },
+    {
+      "id": "f-minmax-05",
+      "type": "write_query",
+      "title": "Самый дорогой товар",
+      "description": "Выведите название и цену товара (товаров) с максимальной ценой. Используйте подзапрос с `MAX`.",
+      "difficulty": "medium",
+      "solution": "SELECT name, price FROM products WHERE price = (SELECT MAX(price) FROM products)",
+      "hints": ["Сначала найдите максимум подзапросом, затем строку с этим значением."],
+      "explanation": "Подзапрос возвращает одно число, и `WHERE` оставляет строки с этой ценой. Если их несколько — выведутся все."
+    },
+    {
+      "id": "f-minmax-06",
+      "type": "write_query",
+      "title": "Крупнейшая операция",
+      "description": "Найдите сумму самого крупного пополнения (`deposit`) и самого крупного снятия (`withdrawal`, отрицательные суммы). Выведите `max_deposit` и `max_withdrawal` (по модулю, положительным числом).",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "solution": "SELECT MAX(CASE WHEN tx_type = 'deposit' THEN amount END) AS max_deposit, -MIN(CASE WHEN tx_type = 'withdrawal' THEN amount END) AS max_withdrawal FROM transactions",
+      "alt": ["SELECT MAX(CASE WHEN tx_type = 'deposit' THEN amount END) AS max_deposit, MAX(CASE WHEN tx_type = 'withdrawal' THEN ABS(amount) END) AS max_withdrawal FROM transactions"],
+      "hints": ["`CASE` без `ELSE` возвращает NULL, а `MIN`/`MAX` пропускают NULL.", "Самое крупное снятие — самое маленькое (самое отрицательное) число."],
+      "explanation": "Условные `MIN`/`MAX` позволяют найти экстремумы по разным подмножествам за один проход."
+    },
+    {
+      "id": "f-minmax-07",
+      "type": "write_query",
+      "title": "Самый ранний найм",
+      "description": "Выведите дату найма самого первого сотрудника отдела с `department_id = 3`.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT MIN(hire_date) FROM employees WHERE department_id = 3",
+      "hints": ["Ранняя дата — минимальная."],
+      "explanation": "`MIN` по датам возвращает самую раннюю."
+    },
+    {
+      "id": "f-minmax-08",
+      "type": "fix_bug",
+      "title": "Самый короткий фильм",
+      "description": "Запрос должен вернуть длительность самого короткого фильма, но возвращает самую длинную.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "starter": "SELECT MAX(duration_min)\nFROM movies;",
+      "solution": "SELECT MIN(duration_min) FROM movies",
+      "hints": ["Нужна другая агрегатная функция."],
+      "explanation": "Минимум — `MIN`, максимум — `MAX`."
+    },
+    {
+      "id": "f-minmax-09",
+      "type": "predict_result",
+      "title": "MAX по строкам",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT MAX(name) FROM departments;",
+      "ask": "value",
+      "hints": ["Для строк `MAX` — последнее значение по алфавиту."],
+      "explanation": "Строки сравниваются посимвольно, поэтому `MAX` — последнее название в алфавитном порядке."
+    },
+    {
+      "id": "f-minmax-10",
+      "type": "choose_query",
+      "title": "Лучший студент",
+      "description": "Какой запрос выведет **все** записи с максимальной оценкой за 2022 год?",
+      "difficulty": "medium",
+      "dataset": "university",
+      "options": [
+        "SELECT student_id, grade FROM enrollments WHERE year = 2022 AND grade = (SELECT MAX(grade) FROM enrollments WHERE year = 2022)",
+        "SELECT student_id, grade FROM enrollments WHERE year = 2022 AND grade > 90",
+        "SELECT student_id, grade FROM enrollments WHERE grade = (SELECT MAX(grade) FROM enrollments)",
+        "SELECT student_id, grade FROM enrollments WHERE year = 2022 ORDER BY grade LIMIT 1"
+      ],
+      "correct": 0,
+      "hints": ["Максимум должен считаться только по 2022 году.", "Сортировка по возрастанию даёт минимум."],
+      "explanation": "Подзапрос находит максимум за 2022 год, а внешний запрос возвращает все записи с этой оценкой."
+    },
+    {
+      "id": "f-minmax-11",
+      "type": "explain_query",
+      "title": "Скалярный MAX",
+      "description": "Что делает `MAX` с двумя аргументами в этом запросе?",
+      "difficulty": "hard",
+      "sql": "SELECT name, MAX(stock, 10) AS shown_stock FROM products;",
+      "options": [
+        "Для каждой строки возвращает большее из `stock` и 10",
+        "Возвращает одну строку с максимальным остатком",
+        "Возвращает 10 товаров с наибольшим остатком",
+        "Вызывает ошибку: MAX принимает один аргумент"
+      ],
+      "correct": 0,
+      "hints": ["С несколькими аргументами `MAX` в SQLite — обычная (не агрегатная) функция."],
+      "explanation": "Многоаргументные `MIN`/`MAX` в SQLite работают построчно, как `LEAST`/`GREATEST` в других СУБД."
+    },
+    {
+      "id": "f-minmax-12",
+      "type": "fill_blank",
+      "title": "Период продаж",
+      "description": "Выведите дату первой и последней продажи с типом клиента `new`.",
+      "difficulty": "easy",
+      "dataset": "sales",
+      "template": "SELECT {{1}}(sale_date), {{2}}(sale_date)\nFROM sales\nWHERE customer_type = 'new';",
+      "answers": ["MIN", "MAX"],
+      "choices": [["MIN", "MAX", "FIRST", "COUNT"], ["MAX", "MIN", "LAST", "SUM"]],
+      "hints": ["Первая дата — наименьшая."],
+      "explanation": "`MIN` даёт самую раннюю дату, `MAX` — самую позднюю."
+    }
+  ]
+}

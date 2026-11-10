@@ -1,0 +1,206 @@
+{
+  "module": "fundamentals.aliases",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "f-alias-01",
+      "type": "write_query",
+      "title": "Полное имя",
+      "description": "Выведите полное имя сотрудника (имя и фамилия через пробел) в столбце `full_name` и его должность в столбце `position`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name || ' ' || last_name AS full_name, job_title AS position FROM employees",
+      "columnNames": true,
+      "hints": [
+        "Строки склеиваются оператором `||`.",
+        "Псевдоним задаётся через `AS`."
+      ],
+      "explanation": "В этом задании проверяются и имена столбцов, поэтому псевдонимы обязательны."
+    },
+    {
+      "id": "f-alias-02",
+      "type": "write_query",
+      "title": "Годовой доход",
+      "description": "Выведите `first_name` и месячную зарплату `monthly_salary` (зарплата в базе — годовая), округлённую до 2 знаков.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, ROUND(salary / 12, 2) AS monthly_salary FROM employees",
+      "columnNames": true,
+      "hints": [
+        "Месячная зарплата — `salary / 12`."
+      ],
+      "explanation": "Псевдоним даёт вычисляемому столбцу понятное имя."
+    },
+    {
+      "id": "f-alias-03",
+      "type": "write_query",
+      "title": "Алиас таблицы",
+      "description": "Используя алиас `e` для таблицы `employees`, выведите `e.first_name` и `e.salary` сотрудников с зарплатой выше 100 000.",
+      "difficulty": "easy",
+      "solution": "SELECT e.first_name, e.salary FROM employees AS e WHERE e.salary > 100000",
+      "alt": [
+        "SELECT e.first_name, e.salary FROM employees e WHERE e.salary > 100000"
+      ],
+      "hints": [
+        "`FROM employees AS e`, затем `e.столбец`."
+      ],
+      "explanation": "Алиас таблицы сокращает запись и становится обязательным при соединении таблицы с самой собой."
+    },
+    {
+      "id": "f-alias-04",
+      "type": "write_query",
+      "title": "Сортировка по псевдониму",
+      "description": "Выведите название проекта (`project`) и длительность проекта в днях (`days`) для завершённых проектов. Длительность — разница `julianday(end_date) - julianday(start_date)`, приведённая к целому. Отсортируйте по `days` по убыванию.",
+      "difficulty": "medium",
+      "solution": "SELECT name AS project, CAST(julianday(end_date) - julianday(start_date) AS INTEGER) AS days FROM projects WHERE end_date IS NOT NULL ORDER BY days DESC",
+      "columnNames": true,
+      "hints": [
+        "`CAST(… AS INTEGER)` отбрасывает дробную часть.",
+        "Псевдоним можно использовать в `ORDER BY`."
+      ],
+      "explanation": "`ORDER BY` выполняется после `SELECT`, поэтому псевдоним `days` там доступен."
+    },
+    {
+      "id": "f-alias-05",
+      "type": "write_query",
+      "title": "Имена с пробелами",
+      "description": "Выведите название отдела в столбце `Отдел` и бюджет в столбце `Бюджет, €`.",
+      "difficulty": "medium",
+      "solution": "SELECT name AS \"Отдел\", budget AS \"Бюджет, €\" FROM departments",
+      "columnNames": true,
+      "hints": [
+        "Псевдонимы с пробелами и спецсимволами заключаются в двойные кавычки."
+      ],
+      "explanation": "Двойные кавычки в SQL обозначают идентификаторы, одинарные — строковые значения."
+    },
+    {
+      "id": "f-alias-06",
+      "type": "write_query",
+      "title": "Агрегаты с именами",
+      "description": "Для каждого отдела (`department_id`) выведите количество сотрудников `headcount` и максимальную зарплату `top_salary`. Отделы без сотрудников не нужны. Отсортируйте по `headcount` по убыванию, затем по `department_id`.",
+      "difficulty": "medium",
+      "solution": "SELECT department_id, COUNT(*) AS headcount, MAX(salary) AS top_salary FROM employees GROUP BY department_id ORDER BY headcount DESC, department_id",
+      "columnNames": true,
+      "hints": [
+        "Дайте имена агрегатам и используйте их в `ORDER BY`."
+      ],
+      "explanation": "Псевдонимы агрегатов делают отчёт читаемым и упрощают сортировку."
+    },
+    {
+      "id": "f-alias-07",
+      "type": "fix_bug",
+      "title": "Кавычки вокруг псевдонима",
+      "description": "Запрос должен вывести столбец с именем `total salary`, но вместо имени выводит одну и ту же строку в каждой строке. Исправьте.",
+      "difficulty": "easy",
+      "starter": "SELECT department_id, SUM(salary), 'total salary'\nFROM employees\nGROUP BY department_id;",
+      "solution": "SELECT department_id, SUM(salary) AS \"total salary\" FROM employees GROUP BY department_id",
+      "columnNames": true,
+      "hints": [
+        "Одинарные кавычки создают строковое значение, а не имя столбца."
+      ],
+      "explanation": "`'total salary'` — это литерал. Имя столбца задаётся через `AS \"total salary\"`."
+    },
+    {
+      "id": "f-alias-08",
+      "type": "fix_bug",
+      "title": "Псевдоним в WHERE",
+      "description": "Запрос должен вывести сотрудников, у которых месячная зарплата больше 10 000. В SQLite такой запрос работает, но по стандарту SQL псевдоним в `WHERE` недоступен. Перепишите условие через выражение.",
+      "difficulty": "medium",
+      "starter": "SELECT first_name, salary / 12 AS monthly\nFROM employees\nWHERE monthly > 12000;",
+      "solution": "SELECT first_name, salary / 12 AS monthly FROM employees WHERE salary / 12 > 10000",
+      "alt": [
+        "SELECT first_name, salary / 12 AS monthly FROM employees WHERE salary > 120000"
+      ],
+      "hints": [
+        "Повторите выражение `salary / 12` в `WHERE`.",
+        "Проверьте и само пороговое значение."
+      ],
+      "explanation": "`WHERE` выполняется до `SELECT`, поэтому переносимый способ — повторить выражение. Заодно исправлен порог: 10 000, а не 12 000."
+    },
+    {
+      "id": "f-alias-09",
+      "type": "choose_query",
+      "title": "Корректный псевдоним",
+      "description": "Какой запрос выведет столбец с именем `avg_salary`?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT ROUND(AVG(salary)) AS avg_salary FROM employees",
+        "SELECT ROUND(AVG(salary)) = avg_salary FROM employees",
+        "SELECT ROUND(AVG(salary)), 'avg_salary' FROM employees",
+        "SELECT avg_salary AS ROUND(AVG(salary)) FROM employees"
+      ],
+      "correct": 0,
+      "hints": [
+        "Синтаксис: `выражение AS имя`."
+      ],
+      "explanation": "Сначала выражение, затем `AS`, затем имя столбца."
+    },
+    {
+      "id": "f-alias-10",
+      "type": "explain_query",
+      "title": "Без AS",
+      "description": "Что делает этот запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT name project_name, budget FROM projects p;",
+      "options": [
+        "Выводит название проекта под именем `project_name` и бюджет; `p` — алиас таблицы",
+        "Выдаёт ошибку из-за отсутствия AS",
+        "Выводит столбцы `name`, `project_name` и `budget`",
+        "Фильтрует проекты по букве p"
+      ],
+      "correct": 0,
+      "hints": [
+        "Ключевое слово `AS` необязательно."
+      ],
+      "explanation": "`AS` можно опускать и для столбцов, и для таблиц, хотя с ним запрос читается лучше."
+    },
+    {
+      "id": "f-alias-11",
+      "type": "fill_blank",
+      "title": "Алиасы в отчёте",
+      "description": "Выведите имя сотрудника под именем `name` и стаж в полных годах на 2024-01-01 под именем `years`.",
+      "difficulty": "medium",
+      "template": "SELECT first_name {{1}} name,\n  CAST((julianday('2024-01-01') - julianday(hire_date)) / {{2}} AS INTEGER) AS years\nFROM employees;",
+      "answers": [
+        "AS",
+        "365.25"
+      ],
+      "choices": [
+        [
+          "AS",
+          "IS",
+          "="
+        ],
+        [
+          "365.25",
+          "12",
+          "30"
+        ]
+      ],
+      "hints": [
+        "Псевдоним задаётся ключевым словом `AS`.",
+        "Чтобы перевести дни в годы, делите на среднюю длину года."
+      ],
+      "explanation": "`AS name` задаёт имя столбца, а деление количества дней на 365.25 даёт стаж в годах с учётом високосных лет."
+    },
+    {
+      "id": "f-alias-12",
+      "type": "order_parts",
+      "title": "Отчёт по должностям",
+      "description": "Соберите запрос: должность (`role`) и средняя зарплата (`avg_pay`), только должности со средней зарплатой выше 80 000, по убыванию средней.",
+      "difficulty": "medium",
+      "parts": [
+        "SELECT job_title AS role, AVG(salary) AS avg_pay",
+        "FROM employees",
+        "GROUP BY job_title",
+        "HAVING AVG(salary) > 80000",
+        "ORDER BY avg_pay DESC, role"
+      ],
+      "distractors": [
+        "WHERE avg_pay > 80000"
+      ],
+      "hints": [
+        "Агрегат нельзя фильтровать в `WHERE`."
+      ],
+      "explanation": "Фильтр по агрегату идёт в `HAVING`, а сортировать по псевдониму можно в `ORDER BY`."
+    }
+  ]
+}

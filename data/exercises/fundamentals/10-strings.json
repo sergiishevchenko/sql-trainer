@@ -1,0 +1,182 @@
+{
+  "module": "fundamentals.strings",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-str-01",
+      "type": "write_query",
+      "title": "Верхний регистр",
+      "description": "Выведите фамилии клиентов в верхнем регистре (`last_upper`).",
+      "difficulty": "easy",
+      "solution": "SELECT UPPER(last_name) AS last_upper FROM customers",
+      "hints": [
+        "`UPPER(строка)`."
+      ],
+      "explanation": "`UPPER` и `LOWER` меняют регистр латинских букв."
+    },
+    {
+      "id": "f-str-02",
+      "type": "write_query",
+      "title": "Длина названия",
+      "description": "Выведите название товара и длину названия (`name_length`). Отсортируйте по длине по убыванию, затем по названию.",
+      "difficulty": "easy",
+      "solution": "SELECT name, LENGTH(name) AS name_length FROM products ORDER BY name_length DESC, name",
+      "hints": [
+        "`LENGTH(строка)` — количество символов."
+      ],
+      "explanation": "`LENGTH` возвращает количество символов строки."
+    },
+    {
+      "id": "f-str-03",
+      "type": "write_query",
+      "title": "Инициалы",
+      "description": "Выведите инициалы клиента в формате `A.B.` (первая буква имени, точка, первая буква фамилии, точка) в столбце `initials`.",
+      "difficulty": "easy",
+      "solution": "SELECT SUBSTR(first_name, 1, 1) || '.' || SUBSTR(last_name, 1, 1) || '.' AS initials FROM customers",
+      "hints": [
+        "`SUBSTR(s, 1, 1)` — первый символ строки."
+      ],
+      "explanation": "Нумерация символов в `SUBSTR` начинается с 1."
+    },
+    {
+      "id": "f-str-04",
+      "type": "write_query",
+      "title": "Домен почты",
+      "description": "Для клиентов с указанным email выведите email и домен (`domain`) — всё после символа `@`.",
+      "difficulty": "medium",
+      "solution": "SELECT email, SUBSTR(email, INSTR(email, '@') + 1) AS domain FROM customers WHERE email IS NOT NULL",
+      "hints": [
+        "`INSTR(email, '@')` — позиция символа `@`.",
+        "`SUBSTR` без третьего аргумента берёт строку до конца."
+      ],
+      "explanation": "Позиция `@` + 1 — начало домена."
+    },
+    {
+      "id": "f-str-05",
+      "type": "write_query",
+      "title": "Популярные домены",
+      "description": "Посчитайте клиентов по почтовым доменам. Выведите домен (`domain`) и количество, отсортированные по количеству по убыванию, затем по домену. Клиентов без email не учитывайте.",
+      "difficulty": "medium",
+      "solution": "SELECT SUBSTR(email, INSTR(email, '@') + 1) AS domain, COUNT(*) AS customers FROM customers WHERE email IS NOT NULL GROUP BY domain ORDER BY customers DESC, domain",
+      "hints": [
+        "Сгруппируйте по выражению с доменом."
+      ],
+      "explanation": "Строковые функции часто используются как ключ группировки."
+    },
+    {
+      "id": "f-str-06",
+      "type": "write_query",
+      "title": "Замена символов",
+      "description": "Выведите код курса (`code`) и тот же код, в котором дефисы `-` заменены на пробелы (`code_spaced`).",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT code, REPLACE(code, '-', ' ') AS code_spaced FROM courses",
+      "hints": [
+        "`REPLACE(строка, что, на_что)`."
+      ],
+      "explanation": "`REPLACE` заменяет все вхождения подстроки."
+    },
+    {
+      "id": "f-str-07",
+      "type": "write_query",
+      "title": "Сравнение без учёта регистра",
+      "description": "Выведите названия фильмов, содержащие слово `the` в любом регистре (используйте `LOWER` и `INSTR`, а не `LIKE`).",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT title FROM movies WHERE INSTR(LOWER(title), 'the') > 0",
+      "alt": [
+        "SELECT title FROM movies WHERE LOWER(title) LIKE '%the%'"
+      ],
+      "hints": [
+        "`INSTR` возвращает 0, если подстрока не найдена."
+      ],
+      "explanation": "Приведение к одному регистру — универсальный способ сравнения без учёта регистра."
+    },
+    {
+      "id": "f-str-08",
+      "type": "write_query",
+      "title": "Форматирование цены",
+      "description": "Выведите название товара и цену в виде текста с двумя знаками после запятой и символом валюты: например `999.00 EUR` (`price_label`).",
+      "difficulty": "medium",
+      "solution": "SELECT name, printf('%.2f', price) || ' EUR' AS price_label FROM products",
+      "alt": [
+        "SELECT name, printf('%.2f EUR', price) AS price_label FROM products",
+        "SELECT name, format('%.2f EUR', price) AS price_label FROM products"
+      ],
+      "hints": [
+        "`printf('%.2f', x)` форматирует число с двумя знаками."
+      ],
+      "explanation": "`printf` (или его синоним `format`) удобен для форматирования чисел в отчётах."
+    },
+    {
+      "id": "f-str-09",
+      "type": "fix_bug",
+      "title": "NULL ломает конкатенацию",
+      "description": "Запрос должен вывести строку `Имя <email>` для каждого клиента, а для клиентов без email — `Имя <нет>`. Сейчас у таких клиентов выводится NULL.",
+      "difficulty": "medium",
+      "starter": "SELECT first_name || ' <' || email || '>' AS contact\nFROM customers;",
+      "solution": "SELECT first_name || ' <' || COALESCE(email, 'нет') || '>' AS contact FROM customers",
+      "alt": [
+        "SELECT first_name || ' <' || IFNULL(email, 'нет') || '>' AS contact FROM customers"
+      ],
+      "hints": [
+        "Конкатенация с NULL даёт NULL."
+      ],
+      "explanation": "Замените NULL на значение по умолчанию через `COALESCE` до склейки строк."
+    },
+    {
+      "id": "f-str-10",
+      "type": "predict_result",
+      "title": "Позиция подстроки",
+      "description": "Что вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT INSTR('data@sql.dev', '@');",
+      "ask": "value",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "0"
+      ],
+      "hints": [
+        "Позиции считаются с 1."
+      ],
+      "explanation": "Символ `@` стоит на 5-й позиции: d(1) a(2) t(3) a(4) @(5)."
+    },
+    {
+      "id": "f-str-11",
+      "type": "choose_query",
+      "title": "Очистка пробелов",
+      "description": "Какой запрос корректно найдёт клиентов из `London`, даже если в данных случайно окажутся пробелы вокруг названия города и разный регистр?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT id FROM customers WHERE LOWER(TRIM(city)) = 'london'",
+        "SELECT id FROM customers WHERE city = 'london'",
+        "SELECT id FROM customers WHERE TRIM(city) = 'london'",
+        "SELECT id FROM customers WHERE city = ' London '"
+      ],
+      "correct": 0,
+      "hints": [
+        "`=` чувствителен к регистру."
+      ],
+      "explanation": "`TRIM` убирает пробелы, `LOWER` выравнивает регистр — значения сравниваются корректно."
+    },
+    {
+      "id": "f-str-12",
+      "type": "challenge",
+      "title": "Логины сотрудников",
+      "description": "Сгенерируйте логин для каждого сотрудника: первая буква имени + фамилия, всё в нижнем регистре (например, `jsmith`). Выведите `login` и количество сотрудников с таким логином (`cnt`). Отсортируйте по `cnt` по убыванию, затем по логину — так возможные коллизии логинов окажутся вверху.",
+      "difficulty": "hard",
+      "dataset": "employees",
+      "solution": "SELECT LOWER(SUBSTR(first_name, 1, 1) || last_name) AS login, COUNT(*) AS cnt FROM employees GROUP BY login ORDER BY cnt DESC, login",
+      "alt": [
+        "SELECT LOWER(SUBSTR(first_name, 1, 1)) || LOWER(last_name) AS login, COUNT(*) AS cnt FROM employees GROUP BY login ORDER BY cnt DESC, login"
+      ],
+      "hints": [
+        "Соберите логин через `SUBSTR` и `||`, затем `LOWER`.",
+        "Группируйте по выражению логина."
+      ],
+      "explanation": "Группировка по вычисленному значению показывает возможные коллизии логинов."
+    }
+  ]
+}

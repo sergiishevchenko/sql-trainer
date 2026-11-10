@@ -1,0 +1,145 @@
+{
+  "module": "fundamentals.case",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-case-01",
+      "type": "write_query",
+      "title": "Ценовые сегменты",
+      "description": "Выведите название, цену и сегмент товара `segment`: `premium` для цены от 1000, `standard` для цены от 100 до 999.99, иначе `budget`.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price, CASE WHEN price >= 1000 THEN 'premium' WHEN price >= 100 THEN 'standard' ELSE 'budget' END AS segment FROM products",
+      "hints": ["Условия проверяются сверху вниз — начните с самого строгого."],
+      "explanation": "Первое истинное `WHEN` определяет результат, поэтому порядок условий важен."
+    },
+    {
+      "id": "f-case-02",
+      "type": "write_query",
+      "title": "Статусы по-русски",
+      "description": "Выведите `id` заказа и статус на русском (`status_ru`): `delivered` → `Доставлен`, `cancelled` → `Отменён`, остальные → `В пути`.",
+      "difficulty": "easy",
+      "solution": "SELECT id, CASE status WHEN 'delivered' THEN 'Доставлен' WHEN 'cancelled' THEN 'Отменён' ELSE 'В пути' END AS status_ru FROM orders",
+      "alt": ["SELECT id, CASE WHEN status = 'delivered' THEN 'Доставлен' WHEN status = 'cancelled' THEN 'Отменён' ELSE 'В пути' END AS status_ru FROM orders"],
+      "hints": ["Простая форма: `CASE status WHEN 'delivered' THEN …`."],
+      "explanation": "Простая форма `CASE` сравнивает одно выражение с несколькими значениями."
+    },
+    {
+      "id": "f-case-03",
+      "type": "write_query",
+      "title": "Есть ли в наличии",
+      "description": "Выведите название товара и текст `availability`: `в наличии`, если `stock > 0`, иначе `нет в наличии`.",
+      "difficulty": "easy",
+      "solution": "SELECT name, CASE WHEN stock > 0 THEN 'в наличии' ELSE 'нет в наличии' END AS availability FROM products",
+      "alt": ["SELECT name, IIF(stock > 0, 'в наличии', 'нет в наличии') AS availability FROM products"],
+      "hints": ["`CASE WHEN … THEN … ELSE … END`."],
+      "explanation": "Для двух вариантов можно также использовать `IIF` в SQLite."
+    },
+    {
+      "id": "f-case-04",
+      "type": "write_query",
+      "title": "Оценки по шкале",
+      "description": "Для каждой записи о зачислении с выставленной оценкой выведите `student_id`, `grade` и букву `letter`: `A` для 90+, `B` для 75–89, `C` для 60–74, иначе `F`.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT student_id, grade, CASE WHEN grade >= 90 THEN 'A' WHEN grade >= 75 THEN 'B' WHEN grade >= 60 THEN 'C' ELSE 'F' END AS letter FROM enrollments WHERE grade IS NOT NULL",
+      "hints": ["Не забудьте исключить записи без оценки."],
+      "explanation": "Если бы NULL не отфильтровали, такие записи получили бы `F` через `ELSE`."
+    },
+    {
+      "id": "f-case-05",
+      "type": "write_query",
+      "title": "Сводная по статусам",
+      "description": "Одной строкой выведите количество заказов в статусах `delivered`, `shipped` и `processing` (столбцы с такими же именами).",
+      "difficulty": "medium",
+      "solution": "SELECT SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered, SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS shipped, SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) AS processing FROM orders",
+      "alt": ["SELECT COUNT(CASE WHEN status = 'delivered' THEN 1 END) AS delivered, COUNT(CASE WHEN status = 'shipped' THEN 1 END) AS shipped, COUNT(CASE WHEN status = 'processing' THEN 1 END) AS processing FROM orders", "SELECT SUM(status = 'delivered') AS delivered, SUM(status = 'shipped') AS shipped, SUM(status = 'processing') AS processing FROM orders"],
+      "hints": ["`SUM(CASE WHEN условие THEN 1 ELSE 0 END)` считает строки с условием."],
+      "explanation": "Условная агрегация превращает строки в столбцы — это «ручной» pivot."
+    },
+    {
+      "id": "f-case-06",
+      "type": "write_query",
+      "title": "Возрастные группы фильмов",
+      "description": "Посчитайте фильмы по группам `audience`: `adult` для рейтинга `R`, `teen` для `PG-13`, иначе `family`. Выведите группу и количество, отсортированные по группе.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT CASE WHEN age_rating = 'R' THEN 'adult' WHEN age_rating = 'PG-13' THEN 'teen' ELSE 'family' END AS audience, COUNT(*) FROM movies GROUP BY audience ORDER BY audience",
+      "hints": ["Группировать можно по выражению `CASE` или его псевдониму."],
+      "explanation": "Категоризация через `CASE` и последующая группировка — частый аналитический приём."
+    },
+    {
+      "id": "f-case-07",
+      "type": "write_query",
+      "title": "Своя сортировка",
+      "description": "Выведите `id` и `status` заказов в порядке: сначала `processing`, затем `shipped`, затем `delivered`, затем `cancelled`. Внутри статуса — по `id`.",
+      "difficulty": "medium",
+      "solution": "SELECT id, status FROM orders ORDER BY CASE status WHEN 'processing' THEN 1 WHEN 'shipped' THEN 2 WHEN 'delivered' THEN 3 ELSE 4 END, id",
+      "hints": ["В `ORDER BY` можно использовать `CASE`, который превращает статус в число."],
+      "explanation": "`CASE` в сортировке задаёт произвольный порядок, отличный от алфавитного."
+    },
+    {
+      "id": "f-case-08",
+      "type": "fix_bug",
+      "title": "Неверный порядок условий",
+      "description": "Запрос должен разделить сотрудников на `senior` (зарплата от 120 000), `middle` (от 70 000) и `junior`. Но `senior` не появляется вообще. Исправьте.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "starter": "SELECT first_name, salary,\n  CASE\n    WHEN salary >= 70000 THEN 'middle'\n    WHEN salary >= 120000 THEN 'senior'\n    ELSE 'junior'\n  END AS grade\nFROM employees;",
+      "solution": "SELECT first_name, salary, CASE WHEN salary >= 120000 THEN 'senior' WHEN salary >= 70000 THEN 'middle' ELSE 'junior' END AS grade FROM employees",
+      "hints": ["Срабатывает первое истинное условие."],
+      "explanation": "Зарплата 150 000 удовлетворяет и `>= 70000`, поэтому более строгое условие должно идти первым."
+    },
+    {
+      "id": "f-case-09",
+      "type": "predict_result",
+      "title": "CASE без ELSE",
+      "description": "Что вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT CASE WHEN 1 > 2 THEN 'yes' END;",
+      "ask": "value",
+      "options": ["yes", "NULL", "no", "0"],
+      "hints": ["Если ни одно условие не истинно и нет `ELSE`…"],
+      "explanation": "Без `ELSE` выражение `CASE` возвращает NULL."
+    },
+    {
+      "id": "f-case-10",
+      "type": "choose_query",
+      "title": "Доля VIP",
+      "description": "Какой запрос вернёт процент VIP-клиентов (от 0 до 100)?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT 100.0 * SUM(CASE WHEN is_vip = 1 THEN 1 ELSE 0 END) / COUNT(*) FROM customers",
+        "SELECT 100 * SUM(CASE WHEN is_vip = 1 THEN 1 ELSE 0 END) / COUNT(*) FROM customers WHERE is_vip = 1",
+        "SELECT COUNT(CASE WHEN is_vip = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) FROM customers",
+        "SELECT SUM(CASE WHEN is_vip = 1 THEN 100 END) FROM customers"
+      ],
+      "correct": 0,
+      "hints": ["`COUNT` считает и нули — он не пропускает 0, только NULL.", "Фильтр `WHERE is_vip = 1` даст 100%."],
+      "explanation": "Нужна сумма единиц по VIP, делённая на общее количество, и дробное деление через `100.0`."
+    },
+    {
+      "id": "f-case-11",
+      "type": "fill_blank",
+      "title": "Тип операции",
+      "description": "Для каждой транзакции выведите `id`, сумму и направление: `in` для положительной суммы, иначе `out`.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "template": "SELECT id, amount,\n  {{1}} WHEN amount > 0 THEN 'in' {{2}} 'out' {{3}} AS direction\nFROM transactions;",
+      "answers": ["CASE", "ELSE", "END"],
+      "choices": [["CASE", "IF", "SWITCH"], ["ELSE", "OTHERWISE", "THEN"], ["END", "END CASE", "STOP"]],
+      "hints": ["Структура: `CASE WHEN … THEN … ELSE … END`."],
+      "explanation": "В SQLite выражение `CASE` всегда закрывается словом `END`."
+    },
+    {
+      "id": "f-case-12",
+      "type": "business_case",
+      "title": "Сегментация клиентов банка",
+      "description": "Банк хочет сегментировать счета по балансу: `high` (от 20 000), `medium` (от 5 000), `low` (от 0) и `negative` (меньше 0). Выведите сегмент `tier`, количество счетов (`accounts`) и суммарный баланс (`total_balance`, округлить до 2 знаков). Учитывайте только открытые счета (`closed_at IS NULL`). Отсортируйте по суммарному балансу по убыванию.",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "solution": "SELECT CASE WHEN balance >= 20000 THEN 'high' WHEN balance >= 5000 THEN 'medium' WHEN balance >= 0 THEN 'low' ELSE 'negative' END AS tier, COUNT(*) AS accounts, ROUND(SUM(balance), 2) AS total_balance FROM accounts WHERE closed_at IS NULL GROUP BY tier ORDER BY total_balance DESC",
+      "hints": ["Сначала постройте `CASE` для сегмента, затем сгруппируйте по нему.", "Закрытые счета отфильтруйте в `WHERE`."],
+      "explanation": "Сегментация через `CASE` + `GROUP BY` — основа большинства отчётов по клиентской базе."
+    }
+  ]
+}

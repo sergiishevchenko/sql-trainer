@@ -1,0 +1,206 @@
+{
+  "module": "fundamentals.dates",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-dates-01",
+      "type": "write_query",
+      "title": "Год регистрации",
+      "description": "Выведите имя клиента и год регистрации (`reg_year`) в виде текста `YYYY`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, strftime('%Y', registered_at) AS reg_year FROM customers",
+      "alt": [
+        "SELECT first_name, substr(registered_at, 1, 4) AS reg_year FROM customers"
+      ],
+      "hints": [
+        "`strftime('%Y', дата)` возвращает год."
+      ],
+      "explanation": "`strftime` извлекает части даты по шаблону формата."
+    },
+    {
+      "id": "f-dates-02",
+      "type": "write_query",
+      "title": "Заказы в марте 2024",
+      "description": "Выведите `id` и дату заказов, сделанных в марте 2024 года.",
+      "difficulty": "easy",
+      "solution": "SELECT id, order_date FROM orders WHERE strftime('%Y-%m', order_date) = '2024-03'",
+      "alt": [
+        "SELECT id, order_date FROM orders WHERE order_date >= '2024-03-01' AND order_date < '2024-04-01'",
+        "SELECT id, order_date FROM orders WHERE order_date LIKE '2024-03%'"
+      ],
+      "hints": [
+        "Сравните год и месяц с `'2024-03'`."
+      ],
+      "explanation": "Можно сравнить отформатированную дату или задать диапазон. Диапазон лучше использует индексы."
+    },
+    {
+      "id": "f-dates-03",
+      "type": "write_query",
+      "title": "Заказы по годам",
+      "description": "Посчитайте количество заказов по годам. Выведите год как **целое число** (`year`) и количество. Отсортируйте по году.",
+      "difficulty": "medium",
+      "solution": "SELECT CAST(strftime('%Y', order_date) AS INTEGER) AS year, COUNT(*) FROM orders GROUP BY year ORDER BY year",
+      "hints": [
+        "`strftime` возвращает текст — приведите его через `CAST(… AS INTEGER)`."
+      ],
+      "explanation": "Приведение к числу важно для корректных сравнений и арифметики."
+    },
+    {
+      "id": "f-dates-04",
+      "type": "write_query",
+      "title": "Дней с регистрации",
+      "description": "Для каждого клиента выведите имя и количество полных дней между датой регистрации и `2024-03-31` (`days_since`). Отсортируйте по `days_since` по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "solution": "SELECT first_name, CAST(julianday('2024-03-31') - julianday(registered_at) AS INTEGER) AS days_since FROM customers ORDER BY days_since DESC, first_name",
+      "hints": [
+        "Разница `julianday` двух дат — количество дней."
+      ],
+      "explanation": "`julianday` переводит дату в число дней, поэтому разность — это интервал в днях."
+    },
+    {
+      "id": "f-dates-05",
+      "type": "write_query",
+      "title": "Возраст сотрудников",
+      "description": "Выведите имя сотрудника и его возраст в полных годах на `2024-01-01` (`age`). Отсортируйте по возрасту по убыванию, затем по имени.",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT first_name, CAST((julianday('2024-01-01') - julianday(birth_date)) / 365.25 AS INTEGER) AS age FROM employees ORDER BY age DESC, first_name",
+      "hints": [
+        "Количество дней раздели на 365.25 и отбрось дробную часть."
+      ],
+      "explanation": "Деление на 365.25 учитывает високосные годы в среднем."
+    },
+    {
+      "id": "f-dates-06",
+      "type": "write_query",
+      "title": "Срок окончания кредита",
+      "description": "Для каждого кредита выведите `id`, дату выдачи и дату окончания `ends_at`: дата выдачи плюс `term_months` месяцев.",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "solution": "SELECT id, issued_at, date(issued_at, '+' || term_months || ' months') AS ends_at FROM loans",
+      "alt": [
+        "SELECT id, issued_at, date(issued_at, printf('+%d months', term_months)) AS ends_at FROM loans"
+      ],
+      "hints": [
+        "Модификатор строится как строка: `'+' || term_months || ' months'`."
+      ],
+      "explanation": "Функция `date` принимает модификаторы вида `'+12 months'`, их можно собирать динамически."
+    },
+    {
+      "id": "f-dates-07",
+      "type": "write_query",
+      "title": "Продажи по дням недели",
+      "description": "Посчитайте количество продаж по дням недели. Выведите номер дня (`weekday`, `0` — воскресенье, текстом как возвращает `strftime('%w', …)`) и количество. Отсортируйте по номеру дня.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "SELECT strftime('%w', sale_date) AS weekday, COUNT(*) FROM sales GROUP BY weekday ORDER BY weekday",
+      "hints": [
+        "`%w` — номер дня недели от 0 до 6."
+      ],
+      "explanation": "Группировка по части даты помогает находить сезонность и недельные паттерны."
+    },
+    {
+      "id": "f-dates-08",
+      "type": "fix_bug",
+      "title": "Текст против числа",
+      "description": "Запрос должен вывести сотрудников, нанятых в 2020 году, но возвращает пустой результат: `strftime` возвращает текст, а сравнивается он с числом.",
+      "difficulty": "hard",
+      "dataset": "employees",
+      "starter": "SELECT first_name, hire_date\nFROM employees\nWHERE strftime('%Y', hire_date) = 2020;",
+      "solution": "SELECT first_name, hire_date FROM employees WHERE strftime('%Y', hire_date) = '2020'",
+      "alt": [
+        "SELECT first_name, hire_date FROM employees WHERE CAST(strftime('%Y', hire_date) AS INTEGER) = 2020",
+        "SELECT first_name, hire_date FROM employees WHERE hire_date LIKE '2020%'"
+      ],
+      "hints": [
+        "`'2020'` (текст) и `2020` (число) в SQLite не равны.",
+        "Приведите одну из сторон к типу другой."
+      ],
+      "explanation": "SQLite не приводит типы при сравнении результата функции с числовой константой, поэтому нужно сравнивать текст с текстом или явно использовать `CAST`."
+    },
+    {
+      "id": "f-dates-09",
+      "type": "predict_result",
+      "title": "Плюс месяц",
+      "description": "Что вернёт запрос?",
+      "difficulty": "hard",
+      "sql": "SELECT date('2024-01-31', '+1 month');",
+      "ask": "value",
+      "options": [
+        "2024-02-29",
+        "2024-03-02",
+        "2024-02-28",
+        "2024-03-01"
+      ],
+      "hints": [
+        "SQLite прибавляет месяц к номеру месяца, а затем нормализует несуществующую дату."
+      ],
+      "explanation": "31 февраля не существует. SQLite нормализует его в 2 марта (2024 — високосный год, в феврале 29 дней)."
+    },
+    {
+      "id": "f-dates-10",
+      "type": "choose_query",
+      "title": "Начало месяца",
+      "description": "Какой запрос сгруппирует транзакции по первому дню месяца (`2024-01-01`, `2024-02-01`, …) и посчитает их количество?",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "options": [
+        "SELECT date(tx_date, 'start of month') AS m, COUNT(*) FROM transactions GROUP BY m ORDER BY m",
+        "SELECT date(tx_date) AS m, COUNT(*) FROM transactions GROUP BY m ORDER BY m",
+        "SELECT strftime('%m', tx_date) AS m, COUNT(*) FROM transactions GROUP BY m ORDER BY m",
+        "SELECT tx_date AS m, COUNT(*) FROM transactions GROUP BY m ORDER BY m"
+      ],
+      "correct": 0,
+      "hints": [
+        "Модификатор `'start of month'` сдвигает дату на первое число."
+      ],
+      "explanation": "`date(x, 'start of month')` возвращает первое число месяца в ISO-формате."
+    },
+    {
+      "id": "f-dates-11",
+      "type": "fill_blank",
+      "title": "Неделя назад",
+      "description": "Выведите транзакции за последние 7 дней до `2024-03-21` включительно (с `2024-03-14`).",
+      "difficulty": "medium",
+      "dataset": "banking",
+      "template": "SELECT id, tx_date, amount\nFROM transactions\nWHERE tx_date >= {{1}}('2024-03-21', '{{2}}');",
+      "answers": [
+        "date",
+        "-7 days"
+      ],
+      "choices": [
+        [
+          "date",
+          "time",
+          "strftime"
+        ],
+        [
+          "-7 days",
+          "+7 days",
+          "-1 week",
+          "7"
+        ]
+      ],
+      "hints": [
+        "Модификатор вычитания дней: `'-N days'`."
+      ],
+      "explanation": "`date('2024-03-21', '-7 days')` = `'2024-03-14'`. Модификатора `weeks` в SQLite нет."
+    },
+    {
+      "id": "f-dates-12",
+      "type": "business_case",
+      "title": "Месячная динамика",
+      "description": "Финансовый отдел просит помесячный отчёт по продажам (`sales`): месяц `month` (`YYYY-MM`), количество продаж `deals`, количество проданных единиц `units` и количество разных продавцов `reps`. Отсортируйте по месяцу.",
+      "difficulty": "medium",
+      "dataset": "sales",
+      "solution": "SELECT strftime('%Y-%m', sale_date) AS month, COUNT(*) AS deals, SUM(quantity) AS units, COUNT(DISTINCT rep_id) AS reps FROM sales GROUP BY month ORDER BY month",
+      "alt": [
+        "SELECT substr(sale_date, 1, 7) AS month, COUNT(*) AS deals, SUM(quantity) AS units, COUNT(DISTINCT rep_id) AS reps FROM sales GROUP BY month ORDER BY month"
+      ],
+      "hints": [
+        "Группировка по месяцу, несколько агрегатов."
+      ],
+      "explanation": "Помесячная агрегация — основа любого отчёта о динамике."
+    }
+  ]
+}

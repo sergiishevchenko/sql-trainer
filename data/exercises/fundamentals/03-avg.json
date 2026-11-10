@@ -1,0 +1,153 @@
+{
+  "module": "fundamentals.avg",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-avg-01",
+      "type": "write_query",
+      "title": "Средняя цена",
+      "description": "Посчитайте среднюю цену товара, округлив до 2 знаков.",
+      "difficulty": "easy",
+      "solution": "SELECT ROUND(AVG(price), 2) FROM products",
+      "hints": ["`ROUND(AVG(price), 2)`."],
+      "explanation": "`AVG` возвращает среднее, `ROUND` убирает лишние знаки."
+    },
+    {
+      "id": "f-avg-02",
+      "type": "write_query",
+      "title": "Средняя зарплата",
+      "description": "Посчитайте среднюю зарплату сотрудников, округлив до целого.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT ROUND(AVG(salary)) FROM employees",
+      "alt": ["SELECT ROUND(AVG(salary), 0) FROM employees"],
+      "hints": ["`ROUND(x)` без второго аргумента округляет до целого."],
+      "explanation": "Среднее по всем сотрудникам — одна строка."
+    },
+    {
+      "id": "f-avg-03",
+      "type": "write_query",
+      "title": "Средний рейтинг драм",
+      "description": "Посчитайте средний рейтинг фильмов жанра с `genre_id = 1`, округлив до 2 знаков.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT ROUND(AVG(rating), 2) FROM movies WHERE genre_id = 1",
+      "hints": ["Отфильтруйте жанр, затем посчитайте среднее."],
+      "explanation": "`WHERE` ограничивает набор строк для среднего."
+    },
+    {
+      "id": "f-avg-04",
+      "type": "write_query",
+      "title": "Средняя оценка в 2023",
+      "description": "Посчитайте среднюю оценку (`grade`) студентов за 2023 год, округлив до 1 знака.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT ROUND(AVG(grade), 1) FROM enrollments WHERE year = 2023",
+      "hints": ["Фильтр по `year`."],
+      "explanation": "Среднее считается только по записям 2023 года."
+    },
+    {
+      "id": "f-avg-05",
+      "type": "write_query",
+      "title": "Средний чек позиции",
+      "description": "Посчитайте среднюю стоимость позиции заказа (`quantity * unit_price`), округлив до 2 знаков. Назовите столбец `avg_line`.",
+      "difficulty": "easy",
+      "solution": "SELECT ROUND(AVG(quantity * unit_price), 2) AS avg_line FROM order_items",
+      "hints": ["`AVG` от выражения."],
+      "explanation": "Сначала для каждой строки вычисляется стоимость, затем находится среднее."
+    },
+    {
+      "id": "f-avg-06",
+      "type": "write_query",
+      "title": "NULL как ноль",
+      "description": "Посчитайте средние кассовые сборы фильмов двумя способами: `avg_known` — только по известным сборам, `avg_all` — считая неизвестные сборы нулём. Округлите оба значения до 2 знаков.",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "solution": "SELECT ROUND(AVG(box_office_musd), 2) AS avg_known, ROUND(AVG(COALESCE(box_office_musd, 0)), 2) AS avg_all FROM movies",
+      "alt": ["SELECT ROUND(AVG(box_office_musd), 2) AS avg_known, ROUND(TOTAL(box_office_musd) / COUNT(*), 2) AS avg_all FROM movies"],
+      "hints": ["`AVG` пропускает NULL.", "`COALESCE(x, 0)` заменит NULL на ноль."],
+      "explanation": "Пропуски влияют на среднее: игнорировать их или считать нулём — это бизнес-решение."
+    },
+    {
+      "id": "f-avg-07",
+      "type": "write_query",
+      "title": "Средний срок кредита",
+      "description": "Посчитайте средний срок (`term_months`) и среднюю ставку (`interest_rate`) активных кредитов (`status = 'active'`). Округлите оба значения до 2 знаков.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "solution": "SELECT ROUND(AVG(term_months), 2), ROUND(AVG(interest_rate), 2) FROM loans WHERE status = 'active'",
+      "hints": ["Два агрегата в одном `SELECT`."],
+      "explanation": "Агрегаты считаются независимо по одному и тому же набору строк."
+    },
+    {
+      "id": "f-avg-08",
+      "type": "fix_bug",
+      "title": "Целочисленное деление",
+      "description": "Запрос должен вернуть среднее количество единиц в позиции заказа с точностью до 2 знаков, но дробная часть теряется.",
+      "difficulty": "medium",
+      "starter": "SELECT ROUND(SUM(quantity) / COUNT(*), 2)\nFROM order_items;",
+      "solution": "SELECT ROUND(AVG(quantity), 2) FROM order_items",
+      "alt": ["SELECT ROUND(SUM(quantity) * 1.0 / COUNT(*), 2) FROM order_items", "SELECT ROUND(CAST(SUM(quantity) AS REAL) / COUNT(*), 2) FROM order_items"],
+      "hints": ["В SQLite деление целых чисел отбрасывает дробную часть."],
+      "explanation": "Используйте `AVG` или приведите одно из чисел к дробному: `* 1.0`."
+    },
+    {
+      "id": "f-avg-09",
+      "type": "predict_result",
+      "title": "Среднее с пропусками",
+      "description": "Чему равно значение (с точностью до целого)?",
+      "difficulty": "hard",
+      "sql": "SELECT ROUND(AVG(x)) FROM (\n  SELECT 10 AS x UNION ALL SELECT 20 UNION ALL SELECT NULL\n);",
+      "ask": "value",
+      "options": ["15", "10", "NULL", "20"],
+      "hints": ["`AVG` игнорирует NULL."],
+      "explanation": "Среднее считается по двум значениям: (10 + 20) / 2 = 15."
+    },
+    {
+      "id": "f-avg-10",
+      "type": "choose_query",
+      "title": "Товары дороже среднего",
+      "description": "Какой запрос выведет товары с ценой выше средней?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT name, price FROM products WHERE price > (SELECT AVG(price) FROM products)",
+        "SELECT name, price FROM products WHERE price > AVG(price)",
+        "SELECT name, price FROM products HAVING price > AVG(price)",
+        "SELECT name, AVG(price) FROM products WHERE price > 0"
+      ],
+      "correct": 0,
+      "hints": ["Агрегат нельзя использовать в `WHERE` напрямую."],
+      "explanation": "Среднее нужно посчитать отдельным подзапросом и сравнить с ним каждую строку."
+    },
+    {
+      "id": "f-avg-11",
+      "type": "explain_query",
+      "title": "AVG и COUNT",
+      "description": "Чему равно выражение `SUM(stock) / COUNT(stock)` по сравнению с `AVG(stock)` в SQLite, если `stock` — целые числа?",
+      "difficulty": "hard",
+      "sql": "SELECT SUM(stock) / COUNT(stock), AVG(stock) FROM products;",
+      "options": [
+        "Первое значение — целая часть среднего, второе — точное среднее",
+        "Значения всегда совпадают",
+        "Первое значение больше второго",
+        "Первое выражение вызовет ошибку"
+      ],
+      "correct": 0,
+      "hints": ["Деление целого на целое в SQLite — целочисленное."],
+      "explanation": "`AVG` всегда возвращает дробное число, а деление двух целых отбрасывает дробную часть."
+    },
+    {
+      "id": "f-avg-12",
+      "type": "fill_blank",
+      "title": "Средний бюджет фильма",
+      "description": "Посчитайте средний бюджет фильмов, вышедших с 2010 года, округлив до 1 знака.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "template": "SELECT {{1}}(AVG(budget_musd), 1)\nFROM movies\nWHERE release_year >= 2010;",
+      "answers": ["ROUND"],
+      "choices": [["ROUND", "CAST", "TRUNC", "FLOOR"]],
+      "hints": ["Функция округления в SQLite."],
+      "explanation": "`ROUND(x, 1)` округляет до одного знака после запятой."
+    }
+  ]
+}

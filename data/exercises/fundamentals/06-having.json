@@ -1,0 +1,144 @@
+{
+  "module": "fundamentals.having",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-having-01",
+      "type": "write_query",
+      "title": "Постоянные клиенты",
+      "description": "Выведите `customer_id` и количество заказов для клиентов, сделавших не менее 2 заказов.",
+      "difficulty": "easy",
+      "solution": "SELECT customer_id, COUNT(*) FROM orders GROUP BY customer_id HAVING COUNT(*) >= 2",
+      "hints": ["Фильтр по агрегату пишется в `HAVING`."],
+      "explanation": "`HAVING` отбрасывает группы, у которых меньше двух заказов."
+    },
+    {
+      "id": "f-having-02",
+      "type": "write_query",
+      "title": "Бренды с несколькими товарами",
+      "description": "Выведите бренды, у которых больше одного товара, и количество их товаров.",
+      "difficulty": "easy",
+      "solution": "SELECT brand, COUNT(*) FROM products GROUP BY brand HAVING COUNT(*) > 1",
+      "hints": ["Сгруппируйте по бренду и отфильтруйте группы."],
+      "explanation": "Обратите внимание: товары без бренда (NULL) тоже образуют группу."
+    },
+    {
+      "id": "f-having-03",
+      "type": "write_query",
+      "title": "Богатые отделы",
+      "description": "Выведите `department_id` и среднюю зарплату отделов, где средняя зарплата больше 90 000. Округлите среднюю до целого.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT department_id, ROUND(AVG(salary)) FROM employees GROUP BY department_id HAVING AVG(salary) > 90000",
+      "hints": ["В `HAVING` сравнивайте неокруглённое среднее."],
+      "explanation": "Фильтр в `HAVING` применяется к каждой группе после вычисления агрегата."
+    },
+    {
+      "id": "f-having-04",
+      "type": "write_query",
+      "title": "Плодовитые режиссёры",
+      "description": "Выведите `director_id` и количество фильмов для режиссёров, снявших 3 и более фильма.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT director_id, COUNT(*) FROM movies GROUP BY director_id HAVING COUNT(*) >= 3",
+      "hints": ["`GROUP BY director_id`, `HAVING COUNT(*) >= 3`."],
+      "explanation": "Группы с меньшим количеством фильмов отбрасываются."
+    },
+    {
+      "id": "f-having-05",
+      "type": "write_query",
+      "title": "Крупные заказы",
+      "description": "Выведите `order_id` и сумму заказа (`total`) для заказов на сумму более 1000. Отсортируйте по сумме по убыванию, затем по `order_id`.",
+      "difficulty": "medium",
+      "solution": "SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id HAVING SUM(quantity * unit_price) > 1000 ORDER BY total DESC, order_id",
+      "alt": ["SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id HAVING total > 1000 ORDER BY total DESC, order_id"],
+      "hints": ["Сумма заказа — `SUM(quantity * unit_price)` по `order_id`."],
+      "explanation": "Сначала считается сумма каждого заказа, затем `HAVING` оставляет крупные."
+    },
+    {
+      "id": "f-having-06",
+      "type": "write_query",
+      "title": "WHERE и HAVING вместе",
+      "description": "Среди доставленных заказов (`delivered`) найдите города доставки, куда доставлено 3 и более заказа. Выведите город и количество.",
+      "difficulty": "medium",
+      "solution": "SELECT shipping_city, COUNT(*) FROM orders WHERE status = 'delivered' GROUP BY shipping_city HAVING COUNT(*) >= 3",
+      "hints": ["Фильтр по статусу — в `WHERE`, по количеству — в `HAVING`."],
+      "explanation": "`WHERE` отсекает строки до группировки, `HAVING` — группы после неё."
+    },
+    {
+      "id": "f-having-07",
+      "type": "write_query",
+      "title": "Популярные курсы",
+      "description": "Выведите `course_id` курсов, на которые записано более 5 студентов за всё время, и число записей. Отсортируйте по числу записей по убыванию, затем по `course_id`.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT course_id, COUNT(*) AS enrolled FROM enrollments GROUP BY course_id HAVING COUNT(*) > 5 ORDER BY enrolled DESC, course_id",
+      "hints": ["`HAVING COUNT(*) > 5`."],
+      "explanation": "После фильтрации групп результат сортируется по агрегату."
+    },
+    {
+      "id": "f-having-08",
+      "type": "fix_bug",
+      "title": "Агрегат в WHERE",
+      "description": "Запрос должен вывести типы транзакций, у которых больше 5 операций, но выдаёт ошибку.",
+      "difficulty": "easy",
+      "dataset": "banking",
+      "starter": "SELECT tx_type, COUNT(*)\nFROM transactions\nWHERE COUNT(*) > 5\nGROUP BY tx_type;",
+      "solution": "SELECT tx_type, COUNT(*) FROM transactions GROUP BY tx_type HAVING COUNT(*) > 5",
+      "hints": ["Агрегаты нельзя использовать в `WHERE`."],
+      "explanation": "Условия на агрегаты переносятся в `HAVING` после `GROUP BY`."
+    },
+    {
+      "id": "f-having-09",
+      "type": "predict_result",
+      "title": "Сколько групп останется",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "sql": "SELECT department_id, COUNT(*)\nFROM employees\nGROUP BY department_id\nHAVING COUNT(*) >= 4;",
+      "ask": "rowCount",
+      "hints": ["Посчитайте сотрудников в каждом отделе."],
+      "explanation": "Остаются только отделы, где не меньше 4 сотрудников."
+    },
+    {
+      "id": "f-having-10",
+      "type": "choose_query",
+      "title": "Где фильтровать",
+      "description": "Нужно найти клиентов с суммарной стоимостью доставки по **неотменённым** заказам не меньше 10. Какой запрос корректен?",
+      "difficulty": "medium",
+      "options": [
+        "SELECT customer_id, SUM(shipping_cost) FROM orders WHERE status <> 'cancelled' GROUP BY customer_id HAVING SUM(shipping_cost) >= 10",
+        "SELECT customer_id, SUM(shipping_cost) FROM orders GROUP BY customer_id HAVING SUM(shipping_cost) >= 10",
+        "SELECT customer_id, SUM(shipping_cost) FROM orders WHERE shipping_cost >= 10 AND status <> 'cancelled' GROUP BY customer_id",
+        "SELECT customer_id, shipping_cost FROM orders WHERE status <> 'cancelled' AND shipping_cost >= 10"
+      ],
+      "correct": 0,
+      "hints": ["Отмена — свойство строки, сумма — свойство группы."],
+      "explanation": "Условие на строку (`status`) идёт в `WHERE`, условие на сумму группы — в `HAVING`."
+    },
+    {
+      "id": "f-having-11",
+      "type": "fill_blank",
+      "title": "Регионы-лидеры",
+      "description": "Найдите продавцов (`rep_id`), продавших более 25 единиц товара за всё время.",
+      "difficulty": "easy",
+      "dataset": "sales",
+      "template": "SELECT rep_id, SUM(quantity) AS units\nFROM sales\n{{1}} rep_id\n{{2}} SUM(quantity) > 25;",
+      "answers": ["GROUP BY", "HAVING"],
+      "choices": [["GROUP BY", "ORDER BY", "PARTITION BY"], ["HAVING", "WHERE", "AND"]],
+      "hints": ["Сначала группировка, потом фильтр групп."],
+      "explanation": "`GROUP BY rep_id` собирает продажи по продавцам, `HAVING` оставляет только лидеров."
+    },
+    {
+      "id": "f-having-12",
+      "type": "challenge",
+      "title": "Товары со стабильно высокими оценками",
+      "description": "Найдите товары (`product_id`), у которых минимум 2 отзыва и **все** оценки не ниже 4. Выведите `product_id`, количество отзывов (`reviews_count`) и средний рейтинг (`avg_rating`, округлить до 2 знаков). Отсортируйте по `product_id`.",
+      "difficulty": "hard",
+      "solution": "SELECT product_id, COUNT(*) AS reviews_count, ROUND(AVG(rating), 2) AS avg_rating FROM reviews GROUP BY product_id HAVING COUNT(*) >= 2 AND MIN(rating) >= 4 ORDER BY product_id",
+      "alt": ["SELECT product_id, COUNT(*) AS reviews_count, ROUND(AVG(rating), 2) AS avg_rating FROM reviews GROUP BY product_id HAVING COUNT(*) >= 2 AND SUM(rating < 4) = 0 ORDER BY product_id"],
+      "hints": ["«Все оценки не ниже 4» — то же самое, что «минимальная оценка не ниже 4».", "В `HAVING` можно объединять условия через `AND`."],
+      "explanation": "Условие «для всех строк группы» удобно выражать через `MIN`/`MAX` в `HAVING`."
+    }
+  ]
+}

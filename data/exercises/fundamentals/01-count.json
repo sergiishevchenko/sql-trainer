@@ -1,0 +1,148 @@
+{
+  "module": "fundamentals.count",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "f-count-01",
+      "type": "write_query",
+      "title": "Сколько клиентов",
+      "description": "Посчитайте общее количество клиентов в таблице `customers`.",
+      "difficulty": "easy",
+      "solution": "SELECT COUNT(*) FROM customers",
+      "alt": ["SELECT COUNT(id) FROM customers"],
+      "hints": ["`COUNT(*)` считает все строки."],
+      "explanation": "`COUNT(*)` возвращает одну строку с количеством строк таблицы."
+    },
+    {
+      "id": "f-count-02",
+      "type": "write_query",
+      "title": "Доставленные заказы",
+      "description": "Посчитайте количество заказов в статусе `delivered`.",
+      "difficulty": "easy",
+      "solution": "SELECT COUNT(*) FROM orders WHERE status = 'delivered'",
+      "hints": ["Сначала отфильтруйте строки через `WHERE`, затем посчитайте."],
+      "explanation": "`WHERE` выполняется до агрегации, поэтому считаются только доставленные заказы."
+    },
+    {
+      "id": "f-count-03",
+      "type": "write_query",
+      "title": "Заполненные email",
+      "description": "Посчитайте, у скольких клиентов указан email. Используйте `COUNT` по столбцу, а не `WHERE`.",
+      "difficulty": "easy",
+      "solution": "SELECT COUNT(email) FROM customers",
+      "alt": ["SELECT COUNT(*) FROM customers WHERE email IS NOT NULL"],
+      "hints": ["`COUNT(столбец)` пропускает NULL."],
+      "explanation": "`COUNT(email)` считает только строки, где email не NULL."
+    },
+    {
+      "id": "f-count-04",
+      "type": "write_query",
+      "title": "Сколько стран",
+      "description": "Посчитайте, из скольких **разных** стран клиенты.",
+      "difficulty": "easy",
+      "solution": "SELECT COUNT(DISTINCT country) FROM customers",
+      "hints": ["`COUNT(DISTINCT …)` считает уникальные значения."],
+      "explanation": "`DISTINCT` внутри `COUNT` убирает повторы перед подсчётом."
+    },
+    {
+      "id": "f-count-05",
+      "type": "write_query",
+      "title": "Сотрудники с руководителем",
+      "description": "Выведите два числа: общее количество сотрудников (`total`) и количество сотрудников, у которых есть руководитель (`with_manager`).",
+      "difficulty": "medium",
+      "dataset": "employees",
+      "solution": "SELECT COUNT(*) AS total, COUNT(manager_id) AS with_manager FROM employees",
+      "hints": ["Два агрегата можно вывести в одном `SELECT`."],
+      "explanation": "`COUNT(*)` и `COUNT(manager_id)` различаются на число сотрудников без руководителя."
+    },
+    {
+      "id": "f-count-06",
+      "type": "write_query",
+      "title": "Фильмы с рейтингом R",
+      "description": "Сколько фильмов имеют возрастной рейтинг `R` и вышли после 2000 года (строго)?",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT COUNT(*) FROM movies WHERE age_rating = 'R' AND release_year > 2000",
+      "hints": ["Два условия в `WHERE`, затем `COUNT(*)`."],
+      "explanation": "Фильтрация комбинируется с подсчётом так же, как с обычной выборкой."
+    },
+    {
+      "id": "f-count-07",
+      "type": "write_query",
+      "title": "Условный подсчёт",
+      "description": "Одним запросом посчитайте: все заказы (`total`), отменённые (`cancelled`) и доставленные (`delivered`).",
+      "difficulty": "medium",
+      "solution": "SELECT COUNT(*) AS total, SUM(status = 'cancelled') AS cancelled, SUM(status = 'delivered') AS delivered FROM orders",
+      "alt": [
+        "SELECT COUNT(*) AS total, COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS cancelled, COUNT(CASE WHEN status = 'delivered' THEN 1 END) AS delivered FROM orders",
+        "SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled, SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered FROM orders"
+      ],
+      "hints": ["В SQLite сравнение даёт 1 или 0, и такие значения можно суммировать.", "Можно также использовать `COUNT(CASE WHEN … THEN 1 END)`."],
+      "explanation": "Условная агрегация позволяет получить несколько счётчиков за один проход по таблице."
+    },
+    {
+      "id": "f-count-08",
+      "type": "fix_bug",
+      "title": "Подсчёт уникальных покупателей",
+      "description": "Запрос должен посчитать, сколько разных клиентов сделали хотя бы один заказ, но результат завышен.",
+      "difficulty": "easy",
+      "starter": "SELECT COUNT(customer_id)\nFROM orders;",
+      "solution": "SELECT COUNT(DISTINCT customer_id) FROM orders",
+      "hints": ["Один клиент мог сделать несколько заказов."],
+      "explanation": "Без `DISTINCT` каждый заказ считается отдельно, даже если клиент тот же."
+    },
+    {
+      "id": "f-count-09",
+      "type": "predict_result",
+      "title": "COUNT(*) против COUNT(столбца)",
+      "description": "Какое значение вернёт запрос?",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "sql": "SELECT COUNT(*) - COUNT(box_office_musd) FROM movies;",
+      "ask": "value",
+      "hints": ["Разница равна количеству NULL в столбце."],
+      "explanation": "`COUNT(*)` считает все строки, `COUNT(box_office_musd)` — только с известными сборами."
+    },
+    {
+      "id": "f-count-10",
+      "type": "predict_result",
+      "title": "Пустая выборка",
+      "description": "Какое значение вернёт запрос, если таких товаров нет?",
+      "difficulty": "medium",
+      "sql": "SELECT COUNT(*) FROM products WHERE price > 100000;",
+      "ask": "value",
+      "options": ["0", "NULL", "Пустой результат", "1"],
+      "hints": ["Агрегат без `GROUP BY` всегда возвращает одну строку."],
+      "explanation": "Даже без подходящих строк `COUNT(*)` возвращает одну строку со значением 0."
+    },
+    {
+      "id": "f-count-11",
+      "type": "choose_query",
+      "title": "Отзывы с комментарием",
+      "description": "Какой запрос посчитает отзывы, у которых есть комментарий?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT COUNT(comment) FROM reviews",
+        "SELECT COUNT(*) FROM reviews",
+        "SELECT COUNT(DISTINCT rating) FROM reviews",
+        "SELECT COUNT(*) FROM reviews WHERE comment IS NULL"
+      ],
+      "correct": 0,
+      "hints": ["Нужно пропустить отзывы без комментария."],
+      "explanation": "`COUNT(comment)` не учитывает строки, где комментарий равен NULL."
+    },
+    {
+      "id": "f-count-12",
+      "type": "fill_blank",
+      "title": "Число студентов факультета",
+      "description": "Посчитайте студентов факультета с `faculty_id = 1`, поступивших в 2021 году или позже.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "template": "SELECT {{1}}\nFROM students\nWHERE faculty_id = 1 AND enrollment_year {{2}} 2021;",
+      "answers": ["COUNT(*)", ">="],
+      "choices": [["COUNT(*)", "SUM(*)", "COUNT(DISTINCT faculty_id)", "MAX(id)"], [">=", ">", "="]],
+      "hints": ["«2021 или позже» включает сам 2021 год."],
+      "explanation": "`COUNT(*)` считает отфильтрованные строки, а `>=` включает 2021 год."
+    }
+  ]
+}
