@@ -32,10 +32,17 @@ export function isLevelCompleted(solved: number, total: number, examPassed: bool
   return examPassed || (total > 0 && solved / total >= LEVEL_COMPLETION_RATIO)
 }
 
-function snippetOf(markdown: string): string {
+/** Converts exercise markdown into a single-line plain-text preview, keeping inline code verbatim. */
+export function snippetOf(markdown: string): string {
+  const codeSpans: string[] = []
   const plain = markdown
     .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/[`*_#>|]/g, '')
+    .replace(/`([^`]*)`/g, (_match, code: string) => `\u0000${codeSpans.push(code) - 1}\u0000`)
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/(^|[^\w*])[*_](?=\S)(.+?)(?<=\S)[*_](?![\w*])/g, '$1$2')
+    .replace(/^\s{0,3}(#{1,6}|>)\s*/gm, '')
+    .replace(/\|/g, ' ')
+    .replace(/\u0000(\d+)\u0000/g, (_match, index: string) => codeSpans[Number(index)] ?? '')
     .replace(/\s+/g, ' ')
     .trim()
   return plain.length > 160 ? `${plain.slice(0, 157)}…` : plain

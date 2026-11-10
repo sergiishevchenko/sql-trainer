@@ -59,18 +59,84 @@
     "hints": ["Read the error message: the database points to the place where the query stopped making sense."],
     "explanation": "The keyword must be spelled exactly: `SELECT`. A \"syntax error\" almost always means a typo or a missing character."
   },
-  "b-select-01": { "title": "Customer names" },
-  "b-select-02": { "title": "10% off sale" },
-  "b-select-03": { "title": "Full name" },
-  "b-select-04": { "title": "Stock value" },
-  "b-select-05": { "title": "Movie profit" },
-  "b-select-06": { "title": "Integer division" },
-  "b-select-07": { "title": "Joining strings" },
-  "b-select-08": { "title": "Price with VAT" },
-  "b-select-09": { "title": "Duration in hours" },
-  "b-select-10": { "title": "ROUND in SELECT" },
-  "b-select-11": { "title": "The missing comma" },
-  "b-select-12": { "title": "A query with an expression" },
+  "b-select-01": {
+    "title": "Customer names",
+    "description": "Return the first name (`first_name`) and last name (`last_name`) of every customer.",
+    "hints": ["List the two columns separated by a comma."],
+    "explanation": "The order of columns in the result matches their order in `SELECT`."
+  },
+  "b-select-02": {
+    "title": "10% off sale",
+    "description": "For every product return the name, the price and the price with a 10% discount in a `sale_price` column.",
+    "hints": ["A price with a 10% discount is 90% of the original price.", "An alias is set with the AS keyword."],
+    "explanation": "The expression `price * 0.9` is evaluated for every row. The `AS sale_price` alias gives the column a meaningful name."
+  },
+  "b-select-03": {
+    "title": "Full name",
+    "description": "Return the customer's full name in a single `full_name` column in the \"First Last\" format (separated by a space).",
+    "hints": ["In SQLite strings are concatenated with the `||` operator.", "Do not forget the space between the parts: `' '`."],
+    "explanation": "The `||` operator concatenates strings: `first_name || ' ' || last_name`."
+  },
+  "b-select-04": {
+    "title": "Stock value",
+    "description": "For every product return the name and the value of its stock (`price * stock`) in a `stock_value` column.",
+    "hints": ["Multiply the price by the quantity in stock."],
+    "explanation": "Arithmetic expressions in `SELECT` are evaluated row by row."
+  },
+  "b-select-05": {
+    "title": "Movie profit",
+    "description": "Return the movie title and the difference between the box office and the budget (`box_office_musd - budget_musd`) in a `profit` column.",
+    "hints": ["Subtract the budget from the box office.", "If the box office is unknown (NULL), the result is NULL too, and that is fine."],
+    "explanation": "Any arithmetic with `NULL` yields `NULL`, so movies without box office data have no defined profit."
+  },
+  "b-select-06": {
+    "title": "Integer division",
+    "description": "What will this query return in SQLite?",
+    "hints": ["Both operands are integers."],
+    "explanation": "In SQLite dividing two integers is integer division: the fractional part is dropped. To get 3.5, write `7 / 2.0` or `7 * 1.0 / 2`."
+  },
+  "b-select-07": {
+    "title": "Joining strings",
+    "description": "Enter the value the query returns.",
+    "hints": ["`||` joins strings one after another."],
+    "explanation": "The three strings are glued into one: `SQL Mastery`."
+  },
+  "b-select-08": {
+    "title": "Price with VAT",
+    "description": "Which query returns the product name and the price including 20% VAT?",
+    "hints": ["A price with 20% VAT is 120% of the original price."],
+    "explanation": "The price has to be multiplied by 1.2. The `%` symbol in SQL is the remainder operator, and `AND` is a logical operator, not a column separator."
+  },
+  "b-select-09": {
+    "title": "Duration in hours",
+    "description": "Return the movie title and its duration in hours **with the fractional part** (for example, 2.47).",
+    "hints": ["Remember how SQLite divides integers."],
+    "explanation": "`duration_min / 60` would drop the fractional part. Dividing by `60.0` turns the result into a real number."
+  },
+  "b-select-10": {
+    "title": "ROUND in SELECT",
+    "description": "What does the query return?",
+    "hints": ["`price * 0.85` is 85% of the price."],
+    "explanation": "Multiplying by 0.85 gives the price with a 15% discount, and `ROUND(x, 2)` rounds it to two decimal places.",
+    "options": [
+      "The name and the price with a 15% discount, rounded to two decimals",
+      "The name and the price with an 85% discount",
+      "Only products cheaper than 85",
+      "The name and the price rounded to hundreds"
+    ]
+  },
+  "b-select-11": {
+    "title": "The missing comma",
+    "description": "The query should return the name and the price of every product, but the result has only one column. Find the bug.",
+    "hints": ["The query runs without errors, so look at the column header in the result.", "A word after a column without a comma is treated as an alias."],
+    "explanation": "Without the comma `price` becomes an alias of the `name` column (`name AS price`). Such bugs are sneaky: the query runs but returns the wrong thing."
+  },
+  "b-select-12": {
+    "title": "A query with an expression",
+    "description": "Assemble a query that returns the product name and the value of its stock.",
+    "hints": ["After SELECT the columns are listed separated by commas."],
+    "explanation": "A computed column is written in the `SELECT` list just like a regular one."
+  },
   "b-from-01": { "title": "All departments" },
   "b-from-02": { "title": "Table alias" },
   "b-from-03": { "title": "Actors and countries" },

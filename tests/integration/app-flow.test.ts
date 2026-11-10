@@ -114,9 +114,9 @@ describe('localization', () => {
     const explain = await call<ExerciseDto>('exercises:get', { exerciseId: 'b-intro-03' })
     expect(explain.title).toBe('Read the query')
     expect(explain.content.options?.[0]).toBe('Returns the name and city of every customer')
-    const untranslated = await call<ExerciseDto>('exercises:get', { exerciseId: 'b-select-02' })
-    expect(untranslated.title).toBe('10% off sale')
-    expect(untranslated.description).toBe(app.catalog.byId.get('b-select-02')!.description)
+    const untranslated = await call<ExerciseDto>('exercises:get', { exerciseId: 'b-where-02' })
+    expect(untranslated.title).toBe('Customers from London')
+    expect(untranslated.description).toBe(app.catalog.byId.get('b-where-02')!.description)
     const blocked = await call<{ error?: { message: string } }>('exercises:run', {
       exerciseId: 'b-intro-01',
       answer: { kind: 'sql', sql: 'DROP TABLE customers' }

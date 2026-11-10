@@ -6,7 +6,7 @@ export default defineConfig({
     alias: { '@shared': resolve(__dirname, 'src/shared'), '@': resolve(__dirname, 'src/renderer') }
   },
   test: {
-    include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts', 'tests/renderer/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     environment: 'node',
     testTimeout: 60000,
     hookTimeout: 60000

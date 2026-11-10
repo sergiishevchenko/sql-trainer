@@ -8,7 +8,6 @@
       "title": "Ваш первый запрос",
       "description": "Выведите **все столбцы** и все строки таблицы `customers`.",
       "difficulty": "easy",
-      "starter": "-- Напишите запрос здесь\n",
       "solution": "SELECT * FROM customers",
       "hints": ["Символ `*` в SELECT означает «все столбцы».", "Шаблон запроса: `SELECT * FROM имя_таблицы;`"],
       "explanation": "`SELECT *` возвращает все столбцы, а отсутствие `WHERE` — все строки таблицы."
