@@ -1,0 +1,14 @@
+{
+  "id": "university",
+  "title": "University",
+  "description": "Университет: факультеты, преподаватели, курсы с пререквизитами, студенты и их оценки.",
+  "icon": "graduation-cap",
+  "tables": {
+    "faculties": "Факультеты",
+    "professors": "Преподаватели",
+    "courses": "Учебные курсы (professor_id может быть NULL)",
+    "prerequisites": "Пререквизиты: какой курс нужно пройти перед другим",
+    "students": "Студенты (faculty_id = NULL — направление не выбрано)",
+    "enrollments": "Записи на курсы и оценки 0–100 (NULL — курс ещё идёт)"
+  }
+}

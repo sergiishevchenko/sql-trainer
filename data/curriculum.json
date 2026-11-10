@@ -1,0 +1,95 @@
+{
+  "levels": [
+    {
+      "id": "beginner",
+      "title": "SQL Beginner",
+      "description": "Первые шаги: как устроены таблицы, как выбирать, фильтровать и сортировать данные.",
+      "modules": [
+        { "id": "beginner.intro", "title": "Что такое SQL", "description": "Таблицы, строки, столбцы и первый запрос.", "tags": ["basics"] },
+        { "id": "beginner.select", "title": "SELECT", "description": "Выбор столбцов и вычисляемых выражений.", "tags": ["select"] },
+        { "id": "beginner.from", "title": "FROM", "description": "Источник данных, псевдонимы таблиц и полные имена столбцов.", "tags": ["select"] },
+        { "id": "beginner.where", "title": "WHERE", "description": "Фильтрация строк с помощью условий и операторов сравнения.", "tags": ["filter"] },
+        { "id": "beginner.distinct", "title": "DISTINCT", "description": "Удаление дубликатов из результата.", "tags": ["select"] },
+        { "id": "beginner.order-by", "title": "ORDER BY", "description": "Сортировка по одному и нескольким столбцам.", "tags": ["sort"] },
+        { "id": "beginner.limit", "title": "LIMIT", "description": "Ограничение количества строк и постраничный вывод с OFFSET.", "tags": ["sort"] },
+        { "id": "beginner.logic", "title": "AND / OR / NOT", "description": "Комбинирование условий и приоритет логических операторов.", "tags": ["filter"] },
+        { "id": "beginner.in-between", "title": "IN / BETWEEN", "description": "Проверка на вхождение в список и диапазон.", "tags": ["filter"] },
+        { "id": "beginner.like", "title": "LIKE", "description": "Поиск по шаблону строк.", "tags": ["filter", "strings"] },
+        { "id": "beginner.null", "title": "NULL", "description": "Отсутствующие значения: IS NULL, COALESCE и трёхзначная логика.", "tags": ["null"] }
+      ]
+    },
+    {
+      "id": "fundamentals",
+      "title": "SQL Fundamentals",
+      "description": "Агрегация, группировка, условная логика и работа с датами и строками.",
+      "modules": [
+        { "id": "fundamentals.count", "title": "COUNT", "description": "Подсчёт строк и непустых значений.", "tags": ["aggregate"] },
+        { "id": "fundamentals.sum", "title": "SUM", "description": "Суммирование значений и выражений.", "tags": ["aggregate"] },
+        { "id": "fundamentals.avg", "title": "AVG", "description": "Среднее значение и влияние NULL.", "tags": ["aggregate"] },
+        { "id": "fundamentals.min-max", "title": "MIN / MAX", "description": "Минимум и максимум для чисел, строк и дат.", "tags": ["aggregate"] },
+        { "id": "fundamentals.group-by", "title": "GROUP BY", "description": "Группировка строк и агрегаты по группам.", "tags": ["aggregate", "grouping"] },
+        { "id": "fundamentals.having", "title": "HAVING", "description": "Фильтрация групп после агрегации.", "tags": ["aggregate", "grouping"] },
+        { "id": "fundamentals.case", "title": "CASE WHEN", "description": "Условные выражения и категоризация данных.", "tags": ["case"] },
+        { "id": "fundamentals.aliases", "title": "Алиасы", "description": "Псевдонимы столбцов и таблиц для читаемых запросов.", "tags": ["aliases"] },
+        { "id": "fundamentals.dates", "title": "Работа с датами", "description": "date, strftime, julianday и арифметика дат в SQLite.", "tags": ["dates"] },
+        { "id": "fundamentals.strings", "title": "Строковые функции", "description": "Конкатенация, UPPER/LOWER, SUBSTR, LENGTH, REPLACE, TRIM, INSTR.", "tags": ["strings"] }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate SQL",
+      "description": "Соединения таблиц, операции над множествами, подзапросы и CTE.",
+      "modules": [
+        { "id": "intermediate.inner-join", "title": "INNER JOIN", "description": "Соединение строк, у которых есть пара в обеих таблицах.", "tags": ["join"] },
+        { "id": "intermediate.left-join", "title": "LEFT JOIN", "description": "Все строки левой таблицы и совпадения из правой.", "tags": ["join"] },
+        { "id": "intermediate.right-join", "title": "RIGHT JOIN", "description": "Все строки правой таблицы и совпадения из левой.", "tags": ["join"] },
+        { "id": "intermediate.full-join", "title": "FULL OUTER JOIN", "description": "Все строки обеих таблиц, с NULL там, где пары нет.", "tags": ["join"] },
+        { "id": "intermediate.cross-join", "title": "CROSS JOIN", "description": "Декартово произведение и генерация комбинаций.", "tags": ["join"] },
+        { "id": "intermediate.self-join", "title": "Self JOIN", "description": "Соединение таблицы с самой собой: иерархии и пары.", "tags": ["join"] },
+        { "id": "intermediate.union", "title": "UNION", "description": "Объединение результатов с удалением дубликатов.", "tags": ["set"] },
+        { "id": "intermediate.union-all", "title": "UNION ALL", "description": "Объединение без удаления дубликатов, INTERSECT и EXCEPT.", "tags": ["set"] },
+        { "id": "intermediate.subqueries", "title": "Подзапросы", "description": "Скалярные, табличные и коррелированные подзапросы.", "tags": ["subquery"] },
+        { "id": "intermediate.exists", "title": "EXISTS", "description": "Проверка существования связанных строк.", "tags": ["subquery"] },
+        { "id": "intermediate.in-subquery", "title": "IN с подзапросами", "description": "Фильтрация по списку, полученному подзапросом.", "tags": ["subquery"] },
+        { "id": "intermediate.cte", "title": "CTE", "description": "Общие табличные выражения WITH для читаемых запросов.", "tags": ["cte"] },
+        { "id": "intermediate.recursive", "title": "WITH RECURSIVE", "description": "Рекурсивные CTE: последовательности и иерархии.", "tags": ["cte", "recursive"] }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced SQL",
+      "description": "Оконные функции, производительность, индексы и транзакции.",
+      "modules": [
+        { "id": "advanced.window-basics", "title": "Window Functions", "description": "Агрегаты с OVER(): расчёты без схлопывания строк.", "tags": ["window"] },
+        { "id": "advanced.row-number", "title": "ROW_NUMBER", "description": "Нумерация строк, дедупликация и top-N в группе.", "tags": ["window"] },
+        { "id": "advanced.rank", "title": "RANK", "description": "Ранжирование с пропусками мест при равенстве.", "tags": ["window"] },
+        { "id": "advanced.dense-rank", "title": "DENSE_RANK", "description": "Ранжирование без пропусков, NTILE.", "tags": ["window"] },
+        { "id": "advanced.lag-lead", "title": "LAG / LEAD", "description": "Доступ к предыдущей и следующей строке.", "tags": ["window"] },
+        { "id": "advanced.partition-by", "title": "PARTITION BY", "description": "Оконные расчёты внутри групп.", "tags": ["window"] },
+        { "id": "advanced.running-total", "title": "Running Total", "description": "Нарастающие итоги, скользящие средние и рамки окна.", "tags": ["window"] },
+        { "id": "advanced.cte-advanced", "title": "Common Table Expressions", "description": "Несколько CTE, переиспользование и пошаговые вычисления.", "tags": ["cte"] },
+        { "id": "advanced.advanced-joins", "title": "Продвинутые JOIN", "description": "Соединения по диапазонам, множественные условия, anti-join.", "tags": ["join"] },
+        { "id": "advanced.optimization", "title": "Оптимизация запросов", "description": "Как писать запросы, которые выполняются быстрее.", "tags": ["performance"] },
+        { "id": "advanced.indexes", "title": "Индексы", "description": "Создание индексов, составные и покрывающие индексы.", "tags": ["performance", "ddl"] },
+        { "id": "advanced.explain", "title": "EXPLAIN QUERY PLAN", "description": "Чтение плана выполнения запроса в SQLite.", "tags": ["performance"] },
+        { "id": "advanced.transactions", "title": "Транзакции", "description": "INSERT, UPDATE, DELETE и атомарность изменений.", "tags": ["dml", "transactions"] }
+      ]
+    },
+    {
+      "id": "expert",
+      "title": "Expert SQL",
+      "description": "Комплексные аналитические и инженерные задачи, приближенные к реальной работе.",
+      "modules": [
+        { "id": "expert.analytics", "title": "Сложные аналитические запросы", "description": "Когорты, доли, сравнения периодов.", "tags": ["analytics", "window"] },
+        { "id": "expert.multi-cte", "title": "Многоуровневые CTE", "description": "Цепочки CTE для многошаговой логики.", "tags": ["cte"] },
+        { "id": "expert.recursive", "title": "Рекурсивные запросы", "description": "Обход графов и деревьев любой глубины.", "tags": ["cte", "recursive"] },
+        { "id": "expert.performance", "title": "Оптимизация производительности", "description": "Переписывание тяжёлых запросов и анализ планов.", "tags": ["performance"] },
+        { "id": "expert.business", "title": "Сложные бизнес-кейсы", "description": "Задачи из жизни продуктовых команд.", "tags": ["business"] },
+        { "id": "expert.data-analysis", "title": "Аналитика данных", "description": "Распределения, медианы, выбросы и сегментация.", "tags": ["analytics"] },
+        { "id": "expert.data-analyst", "title": "Практические задачи Data Analyst", "description": "Метрики, отчёты и дашборды на SQL.", "tags": ["analytics", "business"] },
+        { "id": "expert.data-engineer", "title": "Практические задачи Data Engineer", "description": "Качество данных, дедупликация, SCD и сверки.", "tags": ["engineering"] }
+      ]
+    }
+  ],
+  "projects": []
+}

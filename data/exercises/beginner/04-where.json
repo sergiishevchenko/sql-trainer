@@ -1,0 +1,148 @@
+{
+  "module": "beginner.where",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-where-01",
+      "type": "write_query",
+      "title": "Дорогие товары",
+      "description": "Выведите название и цену товаров дороже 500.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price FROM products WHERE price > 500",
+      "hints": ["Условие пишется после FROM в части WHERE."],
+      "explanation": "`WHERE price > 500` оставляет только строки, где условие истинно."
+    },
+    {
+      "id": "b-where-02",
+      "type": "write_query",
+      "title": "Клиенты из Лондона",
+      "description": "Выведите имя и фамилию клиентов, живущих в городе `London`.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, last_name FROM customers WHERE city = 'London'",
+      "hints": ["Строковые значения пишутся в одинарных кавычках."],
+      "explanation": "Сравнение строк чувствительно к регистру, поэтому важно писать `'London'` точно как в данных."
+    },
+    {
+      "id": "b-where-03",
+      "type": "write_query",
+      "title": "Отменённые заказы",
+      "description": "Выведите `id`, `customer_id` и `order_date` отменённых заказов (статус `cancelled`).",
+      "difficulty": "easy",
+      "solution": "SELECT id, customer_id, order_date FROM orders WHERE status = 'cancelled'",
+      "hints": ["Статус хранится в столбце `status`."],
+      "explanation": "Фильтр по точному значению текстового столбца."
+    },
+    {
+      "id": "b-where-04",
+      "type": "write_query",
+      "title": "Нет в наличии",
+      "description": "Выведите названия товаров, которых нет на складе (`stock = 0`).",
+      "difficulty": "easy",
+      "solution": "SELECT name FROM products WHERE stock = 0",
+      "hints": ["Для сравнения на равенство используется один знак `=`."],
+      "explanation": "В SQL равенство проверяется одиночным `=`, а не `==` (хотя SQLite понимает и `==`)."
+    },
+    {
+      "id": "b-where-05",
+      "type": "write_query",
+      "title": "Новые сотрудники",
+      "description": "Выведите имя, фамилию и дату найма сотрудников, нанятых начиная с 1 января 2021 года.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "solution": "SELECT first_name, last_name, hire_date FROM employees WHERE hire_date >= '2021-01-01'",
+      "hints": ["Даты хранятся как текст `YYYY-MM-DD` и корректно сравниваются как строки."],
+      "explanation": "Формат `YYYY-MM-DD` упорядочен так же, как сами даты, поэтому сравнение `>=` работает."
+    },
+    {
+      "id": "b-where-06",
+      "type": "write_query",
+      "title": "Короткие фильмы",
+      "description": "Выведите название и длительность фильмов короче 100 минут.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, duration_min FROM movies WHERE duration_min < 100",
+      "hints": ["Используйте оператор `<`."],
+      "explanation": "Строгое неравенство не включает фильмы длительностью ровно 100 минут."
+    },
+    {
+      "id": "b-where-07",
+      "type": "fix_bug",
+      "title": "Пустой результат",
+      "description": "Запрос должен вернуть имена клиентов из Лондона, но возвращает пустой результат. Исправьте его.",
+      "difficulty": "easy",
+      "starter": "SELECT first_name\nFROM customers\nWHERE city = 'london';",
+      "solution": "SELECT first_name FROM customers WHERE city = 'London'",
+      "hints": ["Сравните значение в условии с тем, как город записан в таблице."],
+      "explanation": "Сравнение строк через `=` чувствительно к регистру: `'london'` и `'London'` — разные строки."
+    },
+    {
+      "id": "b-where-08",
+      "type": "predict_result",
+      "title": "Бесплатная доставка",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "medium",
+      "sql": "SELECT id FROM orders WHERE shipping_cost = 0;",
+      "ask": "rowCount",
+      "hints": ["Посчитайте заказы со стоимостью доставки 0 в таблице `orders`."],
+      "explanation": "Запрос оставляет только заказы с бесплатной доставкой. Их можно пересчитать в данных таблицы."
+    },
+    {
+      "id": "b-where-09",
+      "type": "choose_query",
+      "title": "Заказы 2024 года",
+      "description": "Какой запрос вернёт все заказы, сделанные в 2024 году? (В данных нет заказов позже 2024 года.)",
+      "difficulty": "medium",
+      "options": [
+        "SELECT id, order_date FROM orders WHERE order_date >= '2024-01-01'",
+        "SELECT id, order_date FROM orders WHERE order_date = '2024'",
+        "SELECT id, order_date FROM orders WHERE order_date >= 2024-01-01",
+        "SELECT id, order_date FROM orders WHERE order_date < '2024-01-01'"
+      ],
+      "correct": 0,
+      "hints": ["Без кавычек `2024-01-01` — это арифметическое выражение 2024 − 1 − 1."],
+      "explanation": "Дату нужно писать строкой в кавычках. Без кавычек получится число 2022, а сравнение текста с числом в SQLite даёт неожиданный результат."
+    },
+    {
+      "id": "b-where-10",
+      "type": "fill_blank",
+      "title": "Высокий рейтинг",
+      "description": "Выведите фильмы с рейтингом **не ниже** 8.5.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "template": "SELECT title, rating\nFROM movies\nWHERE rating {{1}} 8.5;",
+      "answers": [">="],
+      "choices": [[">", "<", ">=", "="]],
+      "hints": ["«Не ниже» включает само значение 8.5."],
+      "explanation": "`>=` включает границу, а `>` — нет."
+    },
+    {
+      "id": "b-where-11",
+      "type": "explain_query",
+      "title": "Оператор <>",
+      "description": "Что вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT name FROM products WHERE price <> 249;",
+      "options": [
+        "Названия всех товаров, цена которых не равна 249",
+        "Названия товаров дешевле 249",
+        "Названия товаров дороже 249",
+        "Названия товаров с ценой ровно 249"
+      ],
+      "correct": 0,
+      "hints": ["`<>` — это стандартная запись «не равно»."],
+      "explanation": "`<>` (и синоним `!=`) означает «не равно»."
+    },
+    {
+      "id": "b-where-12",
+      "type": "order_parts",
+      "title": "Высокие зарплаты",
+      "description": "Соберите запрос, выводящий имена и зарплаты сотрудников с зарплатой больше 100 000. Один фрагмент лишний.",
+      "difficulty": "easy",
+      "dataset": "employees",
+      "parts": ["SELECT first_name, salary", "FROM employees", "WHERE salary > 100000"],
+      "distractors": ["HAVING salary > 100000"],
+      "hints": ["HAVING фильтрует группы, а не отдельные строки."],
+      "explanation": "Для фильтрации отдельных строк используется `WHERE`. `HAVING` применяется после группировки."
+    }
+  ]
+}

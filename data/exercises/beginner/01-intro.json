@@ -1,0 +1,117 @@
+{
+  "module": "beginner.intro",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-intro-01",
+      "type": "write_query",
+      "title": "Ваш первый запрос",
+      "description": "Выведите **все столбцы** и все строки таблицы `customers`.",
+      "difficulty": "easy",
+      "starter": "-- Напишите запрос здесь\n",
+      "solution": "SELECT * FROM customers",
+      "hints": ["Символ `*` в SELECT означает «все столбцы».", "Шаблон запроса: `SELECT * FROM имя_таблицы;`"],
+      "explanation": "`SELECT *` возвращает все столбцы, а отсутствие `WHERE` — все строки таблицы."
+    },
+    {
+      "id": "b-intro-02",
+      "type": "write_query",
+      "title": "Названия товаров",
+      "description": "Выведите только названия (`name`) всех товаров из таблицы `products`.",
+      "difficulty": "easy",
+      "solution": "SELECT name FROM products",
+      "hints": ["Перечислите нужный столбец после SELECT.", "Таблица указывается после FROM."],
+      "explanation": "Чтобы получить один столбец, достаточно указать его имя после `SELECT`."
+    },
+    {
+      "id": "b-intro-03",
+      "type": "explain_query",
+      "title": "Прочитайте запрос",
+      "description": "Что делает этот запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT first_name, city\nFROM customers;",
+      "options": [
+        "Возвращает имя и город каждого клиента",
+        "Возвращает только клиентов, у которых указан город",
+        "Создаёт новую таблицу с именами и городами",
+        "Возвращает только первого клиента в таблице"
+      ],
+      "correct": 0,
+      "hints": ["В запросе нет WHERE и LIMIT — значит строки не фильтруются."],
+      "explanation": "Запрос выбирает два столбца из всех строк таблицы `customers`. Фильтрации нет, поэтому вернутся все клиенты, включая тех, у кого город равен NULL."
+    },
+    {
+      "id": "b-intro-04",
+      "type": "choose_query",
+      "title": "Все столбцы заказов",
+      "description": "Какой запрос вернёт **все столбцы** таблицы `orders`?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT * FROM orders",
+        "SELECT ALL orders",
+        "GET * FROM orders",
+        "SELECT orders"
+      ],
+      "correct": 0,
+      "hints": ["Запрос всегда начинается с SELECT и содержит FROM."],
+      "explanation": "Правильный синтаксис — `SELECT * FROM orders`. Команды `GET` в SQL нет, а `SELECT orders` пытается выбрать несуществующий столбец."
+    },
+    {
+      "id": "b-intro-05",
+      "type": "predict_result",
+      "title": "Сколько категорий?",
+      "description": "Сколько строк вернёт этот запрос? Посмотрите таблицу `categories` во вкладке «Схема».",
+      "difficulty": "easy",
+      "sql": "SELECT name FROM categories;",
+      "ask": "rowCount",
+      "options": ["5", "9", "10", "11"],
+      "hints": ["Без WHERE запрос возвращает каждую строку таблицы."],
+      "explanation": "В таблице `categories` 10 строк, и запрос без фильтра возвращает их все."
+    },
+    {
+      "id": "b-intro-06",
+      "type": "fill_blank",
+      "title": "Ключевые слова запроса",
+      "description": "Вставьте пропущенные ключевые слова, чтобы получить название и цену каждого товара.",
+      "difficulty": "easy",
+      "template": "{{1}} name, price\n{{2}} products;",
+      "answers": ["SELECT", "FROM"],
+      "choices": [["SELECT", "GET", "SHOW"], ["FROM", "IN", "OF"]],
+      "hints": ["Первое слово говорит «выбери», второе — «из таблицы»."],
+      "explanation": "Базовая структура запроса: `SELECT столбцы FROM таблица`."
+    },
+    {
+      "id": "b-intro-07",
+      "type": "order_parts",
+      "title": "Соберите запрос",
+      "description": "Расставьте фрагменты так, чтобы получить название и год выхода каждого фильма.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "parts": ["SELECT", "title, release_year", "FROM", "movies"],
+      "hints": ["Запрос начинается с SELECT, затем идут столбцы, затем FROM и таблица."],
+      "explanation": "Порядок частей запроса фиксирован: `SELECT` → список столбцов → `FROM` → таблица."
+    },
+    {
+      "id": "b-intro-08",
+      "type": "write_query",
+      "title": "Режиссёры",
+      "description": "Выведите имя (`name`) и страну (`country`) всех режиссёров из таблицы `directors`.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT name, country FROM directors",
+      "hints": ["Несколько столбцов перечисляются через запятую."],
+      "explanation": "Столбцы в `SELECT` разделяются запятыми и выводятся в указанном порядке."
+    },
+    {
+      "id": "b-intro-09",
+      "type": "fix_bug",
+      "title": "Опечатка",
+      "description": "Запрос должен вернуть названия всех товаров, но падает с ошибкой. Исправьте его.",
+      "difficulty": "easy",
+      "starter": "SELEC name FROM products;",
+      "solution": "SELECT name FROM products",
+      "hints": ["Прочитайте сообщение об ошибке: СУБД указывает место, где запрос перестал быть понятным."],
+      "explanation": "Ключевое слово должно быть написано точно: `SELECT`. Ошибки «syntax error» почти всегда означают опечатку или пропущенный символ."
+    }
+  ]
+}

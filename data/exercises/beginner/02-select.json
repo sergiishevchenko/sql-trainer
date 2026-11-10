@@ -1,0 +1,148 @@
+{
+  "module": "beginner.select",
+  "dataset": "ecommerce",
+  "exercises": [
+    {
+      "id": "b-select-01",
+      "type": "write_query",
+      "title": "Имена клиентов",
+      "description": "Выведите имя (`first_name`) и фамилию (`last_name`) всех клиентов.",
+      "difficulty": "easy",
+      "solution": "SELECT first_name, last_name FROM customers",
+      "hints": ["Перечислите два столбца через запятую."],
+      "explanation": "Порядок столбцов в результате совпадает с порядком в `SELECT`."
+    },
+    {
+      "id": "b-select-02",
+      "type": "write_query",
+      "title": "Распродажа −10%",
+      "description": "Для каждого товара выведите название, цену и цену со скидкой 10% в столбце `sale_price`.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price, price * 0.9 AS sale_price FROM products",
+      "alt": ["SELECT name, price, price - price * 0.1 AS sale_price FROM products"],
+      "hints": ["Цена со скидкой 10% — это 90% от исходной цены.", "Псевдоним задаётся словом AS."],
+      "explanation": "Выражение `price * 0.9` вычисляется для каждой строки. Псевдоним `AS sale_price` даёт столбцу понятное имя."
+    },
+    {
+      "id": "b-select-03",
+      "type": "write_query",
+      "title": "Полное имя",
+      "description": "Выведите полное имя клиента в одном столбце `full_name` в формате «Имя Фамилия» (через пробел).",
+      "difficulty": "easy",
+      "solution": "SELECT first_name || ' ' || last_name AS full_name FROM customers",
+      "hints": ["В SQLite строки склеиваются оператором `||`.", "Не забудьте пробел между частями: `' '`."],
+      "explanation": "Оператор `||` конкатенирует строки: `first_name || ' ' || last_name`."
+    },
+    {
+      "id": "b-select-04",
+      "type": "write_query",
+      "title": "Стоимость запасов",
+      "description": "Для каждого товара выведите название и стоимость его складских запасов (`price * stock`) в столбце `stock_value`.",
+      "difficulty": "easy",
+      "solution": "SELECT name, price * stock AS stock_value FROM products",
+      "hints": ["Умножьте цену на количество на складе."],
+      "explanation": "Арифметические выражения в `SELECT` вычисляются построчно."
+    },
+    {
+      "id": "b-select-05",
+      "type": "write_query",
+      "title": "Прибыль фильмов",
+      "description": "Выведите название фильма и разницу между сборами и бюджетом (`box_office_musd - budget_musd`) в столбце `profit`.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT title, box_office_musd - budget_musd AS profit FROM movies",
+      "hints": ["Вычтите бюджет из сборов.", "Если сборы неизвестны (NULL), результат тоже будет NULL — это нормально."],
+      "explanation": "Любая арифметика с `NULL` даёт `NULL`, поэтому у фильмов без данных о сборах прибыль не определена."
+    },
+    {
+      "id": "b-select-06",
+      "type": "predict_result",
+      "title": "Целочисленное деление",
+      "description": "Что вернёт этот запрос в SQLite?",
+      "difficulty": "easy",
+      "sql": "SELECT 7 / 2;",
+      "ask": "value",
+      "options": ["3.5", "3", "4", "Ошибка"],
+      "hints": ["Оба операнда — целые числа."],
+      "explanation": "В SQLite деление двух целых чисел целочисленное: дробная часть отбрасывается. Чтобы получить 3.5, пишите `7 / 2.0` или `7 * 1.0 / 2`."
+    },
+    {
+      "id": "b-select-07",
+      "type": "predict_result",
+      "title": "Склейка строк",
+      "description": "Введите значение, которое вернёт запрос.",
+      "difficulty": "easy",
+      "sql": "SELECT 'SQL' || ' ' || 'Mastery';",
+      "ask": "value",
+      "hints": ["`||` соединяет строки последовательно."],
+      "explanation": "Три строки склеиваются в одну: `SQL Mastery`."
+    },
+    {
+      "id": "b-select-08",
+      "type": "choose_query",
+      "title": "Цена с НДС",
+      "description": "Какой запрос вернёт название товара и цену с НДС 20%?",
+      "difficulty": "easy",
+      "options": [
+        "SELECT name, price * 1.2 AS price_with_vat FROM products",
+        "SELECT name, price + 20% FROM products",
+        "SELECT name, price * 20 AS price_with_vat FROM products",
+        "SELECT name AND price * 1.2 FROM products"
+      ],
+      "correct": 0,
+      "hints": ["Цена с НДС 20% — это 120% от исходной цены."],
+      "explanation": "Нужно умножить цену на 1.2. Символ `%` в SQL — остаток от деления, а `AND` — логический оператор, а не разделитель столбцов."
+    },
+    {
+      "id": "b-select-09",
+      "type": "fill_blank",
+      "title": "Длительность в часах",
+      "description": "Выведите название фильма и его длительность в часах **с дробной частью** (например, 2.47).",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "template": "SELECT title, duration_min / {{1}} AS hours\nFROM movies;",
+      "answers": ["60.0"],
+      "choices": [["60", "60.0", "100"]],
+      "hints": ["Вспомните, как SQLite делит целые числа."],
+      "explanation": "`duration_min / 60` отбросит дробную часть. Деление на `60.0` превращает результат в вещественное число."
+    },
+    {
+      "id": "b-select-10",
+      "type": "explain_query",
+      "title": "ROUND в SELECT",
+      "description": "Что вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT name, ROUND(price * 0.85, 2) AS discounted\nFROM products;",
+      "options": [
+        "Название и цену со скидкой 15%, округлённую до двух знаков",
+        "Название и цену со скидкой 85%",
+        "Только товары дешевле 85",
+        "Название и цену, округлённую до сотен"
+      ],
+      "correct": 0,
+      "hints": ["`price * 0.85` — это 85% от цены."],
+      "explanation": "Умножение на 0.85 даёт цену со скидкой 15%, а `ROUND(x, 2)` округляет до двух знаков после запятой."
+    },
+    {
+      "id": "b-select-11",
+      "type": "fix_bug",
+      "title": "Потерянная запятая",
+      "description": "Запрос должен вернуть название и цену каждого товара, но в результате только один столбец. Найдите ошибку.",
+      "difficulty": "medium",
+      "starter": "SELECT name price\nFROM products;",
+      "solution": "SELECT name, price FROM products",
+      "hints": ["Запрос выполняется без ошибок — посмотрите на заголовок столбца в результате.", "Слово после столбца без запятой воспринимается как псевдоним."],
+      "explanation": "Без запятой `price` становится псевдонимом столбца `name` (`name AS price`). Такие ошибки коварны: запрос работает, но возвращает не то."
+    },
+    {
+      "id": "b-select-12",
+      "type": "order_parts",
+      "title": "Запрос с выражением",
+      "description": "Соберите запрос, который выводит название товара и стоимость его запасов.",
+      "difficulty": "easy",
+      "parts": ["SELECT", "name,", "price * stock AS stock_value", "FROM products"],
+      "hints": ["После SELECT перечисляются столбцы через запятую."],
+      "explanation": "Вычисляемый столбец пишется в списке `SELECT` наравне с обычными."
+    }
+  ]
+}

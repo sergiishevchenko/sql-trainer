@@ -1,0 +1,129 @@
+{
+  "module": "beginner.from",
+  "dataset": "employees",
+  "exercises": [
+    {
+      "id": "b-from-01",
+      "type": "write_query",
+      "title": "Все отделы",
+      "description": "Выведите все столбцы таблицы `departments`.",
+      "difficulty": "easy",
+      "solution": "SELECT * FROM departments",
+      "hints": ["Используйте `*`."],
+      "explanation": "`FROM departments` задаёт источник, `*` — все его столбцы."
+    },
+    {
+      "id": "b-from-02",
+      "type": "write_query",
+      "title": "Псевдоним таблицы",
+      "description": "Дайте таблице `employees` псевдоним `e` и выведите через него имя (`first_name`) и должность (`job_title`) каждого сотрудника.",
+      "difficulty": "easy",
+      "solution": "SELECT e.first_name, e.job_title FROM employees AS e",
+      "hints": ["Псевдоним пишется после имени таблицы: `FROM employees AS e`.", "Обращайтесь к столбцам как `e.first_name`."],
+      "explanation": "Псевдоним сокращает запись и становится необходимым, когда в запросе несколько таблиц."
+    },
+    {
+      "id": "b-from-03",
+      "type": "write_query",
+      "title": "Актёры и страны",
+      "description": "Используя псевдоним `a` для таблицы `actors`, выведите имя и страну каждого актёра.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "solution": "SELECT a.name, a.country FROM actors a",
+      "hints": ["Слово AS для псевдонима таблицы можно опустить."],
+      "explanation": "`FROM actors a` и `FROM actors AS a` эквивалентны."
+    },
+    {
+      "id": "b-from-04",
+      "type": "fix_bug",
+      "title": "Неизвестный псевдоним",
+      "description": "Запрос падает с ошибкой «no such column». Исправьте его, сохранив обращения через `m.`.",
+      "difficulty": "easy",
+      "dataset": "movies",
+      "starter": "SELECT m.title, m.rating\nFROM movies;",
+      "solution": "SELECT m.title, m.rating FROM movies m",
+      "alt": ["SELECT m.title, m.rating FROM movies AS m"],
+      "hints": ["Где объявлен псевдоним `m`?"],
+      "explanation": "Псевдоним нужно объявить в `FROM`: `FROM movies m`. Иначе СУБД не знает, что такое `m`."
+    },
+    {
+      "id": "b-from-05",
+      "type": "predict_result",
+      "title": "Сколько отделов?",
+      "description": "Сколько строк вернёт запрос?",
+      "difficulty": "easy",
+      "sql": "SELECT name FROM departments;",
+      "ask": "rowCount",
+      "hints": ["Посмотрите количество строк в таблице на вкладке «Схема»."],
+      "explanation": "Запрос без фильтра возвращает все 8 отделов, включая отдел без сотрудников."
+    },
+    {
+      "id": "b-from-06",
+      "type": "choose_query",
+      "title": "Псевдоним c",
+      "description": "Какой запрос корректно вернёт код и название курсов, используя псевдоним `c`?",
+      "difficulty": "easy",
+      "dataset": "university",
+      "options": [
+        "SELECT c.code, c.title FROM courses c",
+        "SELECT c.code, c.title FROM courses",
+        "SELECT code, title FROM c",
+        "SELECT courses.code, c.title FROM courses AS c"
+      ],
+      "correct": 0,
+      "hints": ["После объявления псевдонима к таблице обращаются только через него."],
+      "explanation": "Псевдоним объявляется в `FROM`. Если таблица получила псевдоним, исходное имя `courses.` в этом запросе уже недоступно."
+    },
+    {
+      "id": "b-from-07",
+      "type": "explain_query",
+      "title": "Логический порядок",
+      "description": "В каком порядке СУБД **логически** обрабатывает части этого запроса?",
+      "difficulty": "medium",
+      "dataset": "movies",
+      "sql": "SELECT title\nFROM movies\nWHERE rating > 8;",
+      "options": [
+        "FROM → WHERE → SELECT",
+        "SELECT → FROM → WHERE",
+        "WHERE → FROM → SELECT",
+        "SELECT → WHERE → FROM"
+      ],
+      "correct": 0,
+      "hints": ["Прежде чем фильтровать строки, их нужно откуда-то взять."],
+      "explanation": "Сначала определяется источник (`FROM`), затем фильтруются строки (`WHERE`) и только потом вычисляются выходные столбцы (`SELECT`)."
+    },
+    {
+      "id": "b-from-08",
+      "type": "fill_blank",
+      "title": "Студенты и города",
+      "description": "Заполните пропуски, чтобы вывести имя и город каждого студента через псевдоним `s`.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "template": "SELECT s.full_name, s.city\nFROM {{1}} {{2}};",
+      "answers": ["students", "s"],
+      "hints": ["Первый пропуск — имя таблицы, второй — псевдоним."],
+      "explanation": "`FROM students s` объявляет таблицу и её псевдоним."
+    },
+    {
+      "id": "b-from-09",
+      "type": "order_parts",
+      "title": "Отделы и города",
+      "description": "Соберите запрос, выводящий название и расположение отделов через псевдоним `d`.",
+      "difficulty": "easy",
+      "parts": ["SELECT", "d.name, d.location", "FROM", "departments AS d"],
+      "hints": ["Псевдоним объявляется в части FROM."],
+      "explanation": "Даже если `SELECT` использует псевдоним, объявляется он позже — в `FROM`."
+    },
+    {
+      "id": "b-from-10",
+      "type": "write_query",
+      "title": "Преподаватели",
+      "description": "Выведите полное имя (`full_name`) и учёное звание (`title`) всех преподавателей.",
+      "difficulty": "easy",
+      "dataset": "university",
+      "solution": "SELECT full_name, title FROM professors",
+      "hints": ["Нужная таблица — `professors`."],
+      "explanation": "Обычный выбор двух столбцов из одной таблицы."
+    }
+  ]
+}
