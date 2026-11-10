@@ -2,7 +2,7 @@ import type { Database, SqlValue } from 'sql.js'
 import type { EngineError, ExecutionResult, ResultSet, SqlCell, StatementOutcome } from '@shared/types/engine'
 
 export function normalizeCell(value: SqlValue): SqlCell {
-  if (value instanceof Uint8Array) return `[BLOB ${value.byteLength} байт]`
+  if (value instanceof Uint8Array) return `[BLOB ${value.byteLength} B]`
   if (typeof value === 'bigint') return Number(value)
   return value as SqlCell
 }

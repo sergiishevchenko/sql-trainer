@@ -1,6 +1,7 @@
 import { and, eq, inArray, notInArray } from 'drizzle-orm'
 import { ACHIEVEMENTS } from '@shared/constants/achievements'
 import { DIFFICULTIES, type ProgressStatus } from '@shared/constants/domain'
+import { CONTENT_SOURCE_LOCALE } from '@shared/constants/locale'
 import type { CatalogQuery } from '@shared/schemas/ipc'
 import type { CatalogFacets, CatalogPage, ExerciseSummary, PublicExercise } from '@shared/types/exercise'
 import type { LevelDto, ModuleDetailDto, ModuleSummaryDto, ProjectDto } from '@shared/types/learning'
@@ -19,6 +20,7 @@ import {
 import { notFound } from '../errors'
 import { referencedIdentifiers } from '../engine/guard'
 import type { Catalog, ResolvedExercise } from '../content/loader'
+import { ContentLocalizer } from '../content/localizer'
 import { referencePrograms, toPublicContent } from '../content/programs'
 import type { DatasetStore } from '../engine/datasets'
 
@@ -42,13 +44,17 @@ function snippetOf(markdown: string): string {
 const STATUS_DEFAULT: ProgressStatus = 'not_started'
 
 export class CatalogService {
+  readonly text: ContentLocalizer
+
   constructor(
     private readonly db: AppDatabase,
     readonly catalog: Catalog,
     private readonly datasets: DatasetStore,
     private readonly hiddenTestCount: (ex: ResolvedExercise) => number,
     private readonly now: () => number = Date.now
-  ) {}
+  ) {
+    this.text = new ContentLocalizer(catalog)
+  }
 
   /**
    * Synchronises the file-based catalog into the database. Exercises that disappeared from
@@ -142,7 +148,7 @@ export class CatalogService {
         const values = {
           id: a.id,
           title: a.title,
-          description: a.description,
+          description: a.description[CONTENT_SOURCE_LOCALE],
           icon: a.icon,
           category: a.category,
           xpReward: a.xpReward,
@@ -187,15 +193,16 @@ export class CatalogService {
   }
 
   summary(ex: ResolvedExercise, progress?: ProgressRow, isFavorite = false): ExerciseSummary {
+    const text = this.text.exercise(ex)
     return {
       id: ex.id,
-      title: ex.title,
-      snippet: snippetOf(ex.description),
+      title: text.title,
+      snippet: snippetOf(text.description),
       type: ex.type,
       difficulty: ex.difficulty,
       level: ex.level,
       moduleId: ex.module,
-      moduleTitle: this.catalog.modules.get(ex.module)?.title ?? ex.module,
+      moduleTitle: this.text.moduleTitle(ex.module),
       dataset: ex.dataset,
       xp: ex.xp,
       minutes: ex.minutes,
@@ -233,7 +240,8 @@ export class CatalogService {
         if (status !== query.status) return false
       }
       if (search) {
-        const haystack = `${ex.title} ${ex.description} ${ex.tags.join(' ')} ${ex.id}`.toLowerCase()
+        const text = this.text.exercise(ex)
+        const haystack = `${text.title} ${text.description} ${ex.title} ${ex.tags.join(' ')} ${ex.id}`.toLowerCase()
         if (!search.split(/\s+/).every((word) => haystack.includes(word))) return false
       }
       return true
@@ -251,7 +259,7 @@ export class CatalogService {
         sorted.sort((a, b) => difficultyRank(a.difficulty) - difficultyRank(b.difficulty) || a.position - b.position)
         break
       case 'title':
-        sorted.sort((a, b) => a.title.localeCompare(b.title, 'ru'))
+        sorted.sort((a, b) => this.text.compare(this.text.exerciseTitle(a), this.text.exerciseTitle(b)))
         break
       case 'minutes':
         sorted.sort((a, b) => a.minutes - b.minutes || a.position - b.position)
@@ -292,7 +300,7 @@ export class CatalogService {
       byDifficulty,
       modules: [...this.catalog.modules.values()]
         .filter((m) => moduleCounts.has(m.id))
-        .map((m) => ({ id: m.id, title: m.title, level: m.levelId, count: moduleCounts.get(m.id) ?? 0 })),
+        .map((m) => ({ id: m.id, title: this.text.module(m).title, level: m.levelId, count: moduleCounts.get(m.id) ?? 0 })),
       xpRange: [Number.isFinite(xpMin) ? xpMin : 0, xpMax],
       minutesRange: [Number.isFinite(minMin) ? minMin : 0, minMax]
     }
@@ -329,13 +337,14 @@ export class CatalogService {
         .get()?.content ?? ''
     const siblings = this.catalog.exercises.filter((e) => e.module === ex.module)
     const index = siblings.findIndex((e) => e.id === ex.id)
-    const level = this.catalog.levels.find((l) => l.id === ex.level)
+    const text = this.text.exercise(ex)
+    const content = toPublicContent(ex)
     return {
       ...this.summary(ex, progress, isFavorite),
-      description: ex.description,
-      theory: ex.theory,
-      hints: ex.hints,
-      content: toPublicContent(ex),
+      description: text.description,
+      theory: text.theory,
+      hints: text.hints,
+      content: content.type === 'explain_query' && text.options ? { ...content, options: text.options } : content,
       hiddenTestCount: this.hiddenTestCount(ex),
       relatedTables: this.relatedTables(ex),
       progress: {
@@ -350,7 +359,7 @@ export class CatalogService {
       note,
       prevId: siblings[index - 1]?.id ?? null,
       nextId: siblings[index + 1]?.id ?? null,
-      levelTitle: level?.title ?? ex.level
+      levelTitle: this.text.levelTitle(ex.level)
     }
   }
 
@@ -379,12 +388,13 @@ export class CatalogService {
       const list = this.catalog.exercises.filter((e) => e.module === m.id)
       const solved = list.filter((e) => progress.get(e.id)?.firstSolvedAt).length
       const test = tests.get(m.id)
+      const text = this.text.module(m)
       result.set(m.id, {
         id: m.id,
         levelId: m.levelId,
         order: m.position % 100,
-        title: m.title,
-        description: m.description,
+        title: text.title,
+        description: text.description,
         tags: m.tags,
         total: list.length,
         solved,
@@ -405,11 +415,12 @@ export class CatalogService {
       const total = mods.reduce((s, m) => s + m.total, 0)
       const solved = mods.reduce((s, m) => s + m.solved, 0)
       const examPassed = exams.get(level.id)?.passed ?? false
+      const text = this.text.level(level)
       return {
         id: level.id,
         order: level.position + 1,
-        title: level.title,
-        description: level.description,
+        title: text.title,
+        description: text.description,
         modules: mods,
         total,
         solved,
@@ -428,11 +439,10 @@ export class CatalogService {
     const summary = this.moduleSummaries(userId, progress).get(moduleId)!
     const ordered = [...this.catalog.modules.values()].sort((a, b) => a.position - b.position)
     const index = ordered.findIndex((x) => x.id === moduleId)
-    const level = this.catalog.levels.find((l) => l.id === m.levelId)!
     return {
       ...summary,
-      theory: m.theory,
-      levelTitle: level.title,
+      theory: this.text.module(m).theory,
+      levelTitle: this.text.levelTitle(m.levelId),
       exercises: this.catalog.exercises
         .filter((e) => e.module === moduleId)
         .map((e) => this.summary(e, progress.get(e.id), favs.has(e.id))),
@@ -445,10 +455,11 @@ export class CatalogService {
     const progress = this.progressMap(userId)
     return this.catalog.projects.map((p) => {
       const solved = p.exercises.filter((id) => progress.get(id)?.firstSolvedAt).length
+      const text = this.text.project(p)
       return {
         id: p.id,
-        title: p.title,
-        description: p.description,
+        title: text.title,
+        description: text.description,
         level: p.level,
         dataset: p.dataset,
         total: p.exercises.length,

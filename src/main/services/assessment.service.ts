@@ -17,6 +17,7 @@ import { assessments } from '../database/schema'
 import { AppError, notFound } from '../errors'
 import type { ResolvedExercise } from '../content/loader'
 import { deterministicShuffle } from '../content/programs'
+import { tr } from '../i18n'
 import { localDate } from '../utils/date'
 import type { AchievementsService } from './achievements.service'
 import type { CatalogService } from './catalog.service'
@@ -45,12 +46,32 @@ export class AssessmentService {
     private readonly now: () => number = Date.now
   ) {}
 
+  private title(kind: AssessmentKind, scopeId: string | null, fallback: string): string {
+    const text = this.catalog.text
+    switch (kind) {
+      case 'module_test':
+        return scopeId && this.catalog.catalog.modules.has(scopeId) ? tr('assessment.moduleTest', { title: text.moduleTitle(scopeId) }) : fallback
+      case 'level_exam':
+        return scopeId ? tr('assessment.levelExam', { title: text.levelTitle(scopeId) }) : fallback
+      case 'speed':
+        return tr('assessment.speed')
+      case 'review':
+        return tr('assessment.review')
+      case 'project': {
+        const project = this.catalog.catalog.projects.find((p) => p.id === scopeId)
+        return project ? tr('assessment.project', { title: text.project(project).title }) : fallback
+      }
+      case 'daily':
+        return tr('assessment.daily')
+    }
+  }
+
   private toDto(row: AssessmentRow): AssessmentDto {
     return {
       id: row.id,
       kind: row.kind as AssessmentKind,
       scopeId: row.scopeId,
-      title: row.title,
+      title: this.title(row.kind as AssessmentKind, row.scopeId, row.title),
       exerciseIds: JSON.parse(row.exerciseIds) as string[],
       startedAt: row.startedAt,
       finishedAt: row.finishedAt,
@@ -127,7 +148,7 @@ export class AssessmentService {
         const rest = randomSample(pool.filter((e) => !quick.includes(e)), MODULE_TEST_SIZE - quick.length, `${seed}:rest`)
         const ids = deterministicShuffle([...quick, ...rest], seed).map((e) => e.id)
         if (ids.length === 0) throw new AppError('not_found', 'errors.emptyAssessment')
-        return { title: `Тест: ${module.title}`, ids, timeLimitSec: null }
+        return { title: this.title(kind, module.id, module.title), ids, timeLimitSec: null }
       }
       case 'level_exam': {
         const level = this.catalog.catalog.levels.find((l) => l.id === scopeId)
@@ -140,14 +161,14 @@ export class AssessmentService {
           }
         }
         if (picked.length === 0) throw new AppError('not_found', 'errors.emptyAssessment')
-        return { title: `Экзамен: ${level.title}`, ids: picked.map((e) => e.id), timeLimitSec: LEVEL_EXAM_SECONDS }
+        return { title: this.title(kind, level.id, level.title), ids: picked.map((e) => e.id), timeLimitSec: LEVEL_EXAM_SECONDS }
       }
       case 'speed': {
         const levelIds = scopeId ? [scopeId] : (['beginner', 'fundamentals'] as LevelId[])
         const pool = all.filter((e) => levelIds.includes(e.level) && (QUICK_TYPES.has(e.type) || e.difficulty === 'easy'))
         const ids = randomSample(pool, SPEED_ROUND_SIZE, seed).map((e) => e.id)
         if (ids.length === 0) throw new AppError('not_found', 'errors.emptyAssessment')
-        return { title: 'Скоростной раунд', ids, timeLimitSec: SPEED_ROUND_SECONDS }
+        return { title: tr('assessment.speed'), ids, timeLimitSec: SPEED_ROUND_SECONDS }
       }
       case 'review': {
         const failing = all
@@ -159,15 +180,15 @@ export class AssessmentService {
         })
         const ids = [...failing, ...shaky].slice(0, 10).map((e) => e.id)
         if (ids.length === 0) throw new AppError('not_found', 'errors.nothingToReview')
-        return { title: 'Работа над ошибками', ids, timeLimitSec: null }
+        return { title: tr('assessment.review'), ids, timeLimitSec: null }
       }
       case 'project': {
         const project = this.catalog.catalog.projects.find((p) => p.id === scopeId)
         if (!project) throw notFound('project')
-        return { title: `Проект: ${project.title}`, ids: project.exercises, timeLimitSec: null }
+        return { title: this.title(kind, project.id, project.title), ids: project.exercises, timeLimitSec: null }
       }
       case 'daily':
-        return { title: 'Ежедневные задания', ids: this.dailyExerciseIds(userId, scopeId ?? localDate(this.now())), timeLimitSec: null }
+        return { title: tr('assessment.daily'), ids: this.dailyExerciseIds(userId, scopeId ?? localDate(this.now())), timeLimitSec: null }
     }
   }
 

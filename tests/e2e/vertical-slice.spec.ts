@@ -47,12 +47,12 @@ test('register, solve an exercise and keep progress after restart', async () => 
 
   const second = await launchApp(userData)
   await expect(second.page.getByRole('button', { name: /alice/ })).toBeVisible()
-  await second.page.getByLabel('Имя пользователя или email').fill('alice')
-  await second.page.getByLabel('Пароль', { exact: true }).fill('secret123')
-  await second.page.getByRole('button', { name: 'Войти' }).click()
+  await second.page.getByLabel('Username or email').fill('alice')
+  await second.page.getByLabel('Password', { exact: true }).fill('secret123')
+  await second.page.getByRole('button', { name: 'Sign in' }).click()
   await expect(second.page.getByTestId('dashboard-greeting')).toBeVisible()
   await openRoute(second.page, '#/exercises/b-select-01')
-  await expect(second.page.getByText('Решено').first()).toBeVisible()
+  await expect(second.page.getByText('Solved').first()).toBeVisible()
   await second.app.close()
 
   const third = await launchApp(userData)

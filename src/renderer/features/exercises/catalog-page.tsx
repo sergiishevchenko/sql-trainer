@@ -122,7 +122,7 @@ export function CatalogPage() {
             label={t('exercises.xp')}
             value={filters.xp === 'any' ? undefined : filters.xp}
             onChange={(v) => set({ xp: (v ?? 'any') as XpRange })}
-            options={(Object.keys(XP_RANGES) as XpRange[]).filter((k) => k !== 'any').map((k) => ({ value: k, label: XP_RANGES[k].label }))}
+            options={(['low', 'mid', 'high', 'top'] as const).map((k) => ({ value: k, label: t(`exercises.xpRanges.${k}`) }))}
           />
           <FilterSelect
             label={t('exercises.minutes')}

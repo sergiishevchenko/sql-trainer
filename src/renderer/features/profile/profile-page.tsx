@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { changePasswordSchema, passwordConfirmSchema, updateProfileSchema } from '@shared/schemas/auth'
 import { rankForLevel } from '@shared/constants/levels'
 import type { UserSettingsDto } from '@shared/types/user'
+import { LanguageSwitcher } from '@/components/common/language-switcher'
 import { Page, PageHeader } from '@/components/common/page'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -98,6 +99,13 @@ function SettingsForm({ settings }: { settings: UserSettingsDto }) {
 
   return (
     <div className="divide-y divide-border/60">
+      <div className="flex items-start justify-between gap-4 py-2" data-testid="profile-language">
+        <div className="space-y-0.5">
+          <span className="text-sm">{t('profile.language')}</span>
+          <p className="max-w-xs text-xs text-muted-foreground">{t('profile.languageHint')}</p>
+        </div>
+        <LanguageSwitcher />
+      </div>
       <SettingRow label={t('profile.dailyGoal')}>
         <Input
           type="number"
@@ -348,7 +356,7 @@ export function ProfilePage() {
             <div className="space-y-1 px-1 text-[11px] text-muted-foreground">
               <p>{t('profile.version', { version: info.data.version })}</p>
               <p>
-                {info.data.exerciseCount} заданий · {info.data.datasetCount} учебных баз данных
+                {t('profile.contentStats', { exercises: info.data.exerciseCount, datasets: info.data.datasetCount })}
               </p>
               <p className="break-all">{t('profile.storage', { path: info.data.userDataPath })}</p>
             </div>

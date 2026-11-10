@@ -36,15 +36,15 @@ export async function launchApp(userDataDir: string, extraEnv: Record<string, st
 }
 
 export async function registerUser(page: Page, username = 'alice', password = 'secret123'): Promise<string> {
-  await page.getByRole('link', { name: 'Зарегистрироваться' }).click()
-  await page.getByLabel('Имя пользователя').fill(username)
+  await page.getByRole('link', { name: 'Sign up' }).click()
+  await page.getByLabel('Username', { exact: true }).fill(username)
   await page.getByLabel('Email').fill(`${username}@example.com`)
-  await page.getByLabel('Пароль', { exact: true }).fill(password)
-  await page.getByLabel('Повторите пароль').fill(password)
-  await page.getByRole('button', { name: 'Зарегистрироваться' }).click()
+  await page.getByLabel('Password', { exact: true }).fill(password)
+  await page.getByLabel('Repeat password').fill(password)
+  await page.getByRole('button', { name: 'Sign up' }).click()
   const code = (await page.getByTestId('recovery-code').textContent()) ?? ''
-  await page.getByText('Я сохранил код').click()
-  await page.getByRole('button', { name: 'Продолжить' }).click()
+  await page.getByText('I have saved the code').click()
+  await page.getByRole('button', { name: 'Continue' }).click()
   return code.trim()
 }
 

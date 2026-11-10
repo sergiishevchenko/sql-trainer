@@ -1,4 +1,5 @@
 import { Worker } from 'node:worker_threads'
+import { tr } from '../i18n'
 import type { EngineJob, EngineJobResults, JobProcessor, JobResponse } from './jobs'
 
 export type JobResult<J extends EngineJob> = EngineJobResults[J['type']]
@@ -107,7 +108,7 @@ export class WorkerExecutor implements SqlExecutor {
               ok: false,
               error: {
                 code: 'timeout',
-                message: `Превышено время выполнения (${Math.round(timeoutMs / 1000)} с). Проверьте, нет ли бесконечной рекурсии или слишком тяжёлого соединения.`
+                message: tr('engine.timeout', { seconds: Math.round(timeoutMs / 1000) })
               }
             })
           }, timeoutMs)

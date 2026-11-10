@@ -11,6 +11,7 @@ import { AssessmentService } from './services/assessment.service'
 import { AuthService } from './services/auth.service'
 import { CatalogService } from './services/catalog.service'
 import { GradingService } from './services/grading.service'
+import { LocaleService } from './services/locale.service'
 import { PlaygroundService } from './services/playground.service'
 import { ProgressService } from './services/progress.service'
 import { MemoryTokenStore, SessionManager, type TokenStore } from './services/session'
@@ -32,6 +33,7 @@ export interface AppContext {
   engine: SqlEngine
   catalog: Catalog
   migration: MigrationReport
+  locale: LocaleService
   session: SessionManager
   users: UsersService
   auth: AuthService
@@ -68,6 +70,7 @@ export async function createAppContext(options: AppContextOptions): Promise<AppC
     datasetTables
   )
 
+  const locale = new LocaleService(db, now)
   const session = new SessionManager()
   const users = new UsersService(db, now)
   const auth = new AuthService(db, session, options.tokenStore ?? new MemoryTokenStore(), users, now)
@@ -78,13 +81,14 @@ export async function createAppContext(options: AppContextOptions): Promise<AppC
   const progress = new ProgressService(db, catalogService, grading, achievements, users, now)
   const assessments = new AssessmentService(db, catalogService, progress, achievements, now)
   const stats = new StatsService(db, catalogService, users, progress, achievements, assessments, now)
-  const playground = new PlaygroundService(db, engine, now)
+  const playground = new PlaygroundService(db, engine, catalogService.text, now)
 
   return {
     db,
     engine,
     catalog,
     migration,
+    locale,
     session,
     users,
     auth,

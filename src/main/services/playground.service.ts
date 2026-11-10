@@ -5,6 +5,7 @@ import type { AppDatabase } from '../database/connection'
 import { queryHistory } from '../database/schema'
 import { notFound } from '../errors'
 import type { SqlEngine } from '../engine/sql-engine'
+import type { ContentLocalizer } from '../content/localizer'
 
 const HISTORY_LIMIT_PER_USER = 500
 
@@ -15,6 +16,7 @@ export class PlaygroundService {
   constructor(
     private readonly db: AppDatabase,
     private readonly engine: SqlEngine,
+    private readonly text: ContentLocalizer,
     private readonly now: () => number = Date.now
   ) {}
 
@@ -27,12 +29,12 @@ export class PlaygroundService {
   }
 
   datasets(): DatasetSummary[] {
-    return this.engine.datasets.ids().map((id) => this.engine.datasets.summary(id))
+    return this.engine.datasets.ids().map((id) => this.text.datasetSummary(this.engine.datasets.summary(id)))
   }
 
   schema(dataset: string): DatasetSchema {
     this.assertDataset(dataset)
-    return this.engine.datasets.describe(dataset)
+    return this.text.datasetSchema(this.engine.datasets.describe(dataset))
   }
 
   async run(userId: string, dataset: string, sql: string): Promise<PlaygroundRunResult> {

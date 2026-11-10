@@ -18,6 +18,7 @@ import {
   users
 } from '../database/schema'
 import { solutionText } from '../content/programs'
+import { tr } from '../i18n'
 import { localDate } from '../utils/date'
 import type { AchievementsService } from './achievements.service'
 import type { CatalogService, ProgressRow } from './catalog.service'
@@ -193,7 +194,7 @@ export class ProgressService {
       levelUp: outcome.levelUp,
       unlockedAchievements: outcome.unlocked,
       progress: outcome.progress,
-      explanation: grade.correct ? ex.explanation : null,
+      explanation: grade.correct ? this.catalog.text.exercise(ex).explanation : null,
       dailyGoalReached: outcome.dailyGoalReached
     }
   }
@@ -216,12 +217,14 @@ export class ProgressService {
 
   async reveal(userId: string, exerciseId: string): Promise<RevealedSolution> {
     const ex = this.catalog.get(exerciseId)
+    const text = this.catalog.text.exercise(ex)
     let solution = solutionText(ex)
     if (ex.type === 'predict_result') {
       const expected = await this.grading.predictionAnswer(ex)
-      solution = 'error' in expected ? ex.sql : `-- Правильный ответ: ${expected.answer}\n${ex.sql}`
+      solution = 'error' in expected ? ex.sql : `${tr('reveal.correctAnswer', { answer: expected.answer })}\n${ex.sql}`
     } else if (ex.type === 'explain_query') {
-      solution = `-- Правильное объяснение: ${ex.options[ex.correct]}\n${ex.sql}`
+      const options = text.options ?? ex.options
+      solution = `${tr('reveal.correctExplanation', { text: options[ex.correct] })}\n${ex.sql}`
     }
     this.db.write((orm) => {
       const current = this.progressRow(orm, userId, exerciseId)
@@ -230,7 +233,7 @@ export class ProgressService {
         status: (current?.status as ProgressStatus | undefined) ?? 'in_progress'
       })
     })
-    return { solution, explanation: ex.explanation }
+    return { solution, explanation: text.explanation }
   }
 
   toggleFavorite(userId: string, exerciseId: string): boolean {

@@ -28,7 +28,14 @@ export const ru = {
     yes: 'Да',
     no: 'Нет',
     somethingWrong: 'Что-то пошло не так',
-    empty: 'Пока пусто'
+    empty: 'Пока пусто',
+    language: 'Язык'
+  },
+  units: {
+    hours: '{n} ч',
+    minutes: '{n} мин',
+    seconds: '{n} с',
+    milliseconds: '{n} мс'
   },
   nav: {
     dashboard: 'Главная',
@@ -87,7 +94,13 @@ export const ru = {
     recoveryDialogTitle: 'Сохраните код восстановления',
     recoveryDialogText: 'Это единственный способ восстановить доступ, если вы забудете пароль. Код показывается один раз — запишите его в надёжное место.',
     recoveryConfirm: 'Я сохранил код',
-    welcomeToast: 'Добро пожаловать, {name}!'
+    welcomeToast: 'Добро пожаловать, {name}!',
+    features: {
+      exercises: '{exercises} интерактивных заданий на {datasets} учебных базах',
+      exercisesFallback: 'Интерактивные задания на учебных базах данных',
+      grading: 'Мгновенная проверка решений на реальном SQLite со скрытыми тестами',
+      gamification: 'Уровни, XP, достижения, серии и подробная статистика'
+    }
   },
   validation: {
     required: 'Обязательное поле',
@@ -160,13 +173,15 @@ export const ru = {
     currentLevel: 'Текущий уровень',
     daily: 'Ежедневные задания',
     dailyDone: 'Ежедневные задания выполнены',
-    dailyBonus: 'Бонус за выполнение всех заданий'
+    dailyBonus: 'Бонус за выполнение всех заданий',
+    xpToLevel: '{xp} XP до уровня {level}',
+    record: 'Рекорд: {n}'
   },
   learning: {
     title: 'Путь обучения',
     subtitle: 'Пять уровней от первого SELECT до задач Data Engineer',
     modules: 'Модули',
-    exercisesCount: '{n} заданий',
+    exercisesCount: '{n} {n:задание|задания|заданий}',
     completed: 'Завершён',
     examPassed: 'Экзамен сдан',
     startExam: 'Экзамен уровня',
@@ -209,6 +224,12 @@ export const ru = {
     loadMore: 'Показать ещё',
     favorite: 'В избранное',
     unfavorite: 'Убрать из избранного',
+    xpRanges: {
+      low: 'до 10 XP',
+      mid: '11–20 XP',
+      high: '21–35 XP',
+      top: 'от 36 XP'
+    },
     types: {
       write_query: 'Написание запроса',
       fix_bug: 'Найди ошибку',
@@ -252,7 +273,7 @@ export const ru = {
     expected: 'Ожидаемый результат',
     check: 'Проверка',
     runHint: 'Нажмите «Выполнить», чтобы увидеть результат запроса',
-    rows: '{n} строк',
+    rows: '{n} {n:строка|строки|строк}',
     rowsAffected: 'Изменено строк: {n}',
     truncated: 'Показаны первые {n} строк',
     noRows: 'Запрос не вернул строк',
@@ -438,7 +459,10 @@ export const ru = {
     deleteText: 'Аккаунт и весь прогресс будут удалены с этого компьютера без возможности восстановления.',
     deleteConfirm: 'Введите пароль для подтверждения',
     storage: 'Данные хранятся в: {path}',
-    version: 'Версия {version}'
+    version: 'Версия {version}',
+    contentStats: '{exercises} заданий · {datasets} учебных баз данных',
+    language: 'Язык интерфейса',
+    languageHint: 'Задания, которые ещё не переведены, показываются на языке оригинала (русском).'
   },
   levelUp: {
     title: 'Новый уровень!',

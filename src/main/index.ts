@@ -3,6 +3,7 @@ import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron'
 import { IPC_INVOKE } from '@shared/ipc/channels'
 import { createAppContext, type AppContext } from './app-context'
 import { WorkerExecutor } from './engine/executor'
+import { tr } from './i18n'
 import { createDispatcher } from './ipc/dispatcher'
 import { createHandlers } from './ipc/handlers'
 import { contentDir, databasePath, sqlWasmPath, userContentDir, workerScriptPath } from './paths'
@@ -89,7 +90,7 @@ app.whenReady().then(async () => {
     await bootstrap()
   } catch (error) {
     console.error(error)
-    dialog.showErrorBox('SQL Mastery', `Не удалось запустить приложение:\n${(error as Error).message}`)
+    dialog.showErrorBox('SQL Mastery', tr('app.startupFailed', { message: (error as Error).message }))
     app.exit(1)
   }
   app.on('activate', () => {

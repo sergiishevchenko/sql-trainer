@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ChevronsUpDown, Database, Flame, LogOut, Search, User } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
 import { rankForLevel } from '@shared/constants/levels'
+import { LanguageSwitcher } from '@/components/common/language-switcher'
 import { Progress } from '@/components/ui/progress'
 import {
   DropdownMenu,
@@ -100,6 +101,7 @@ export function Sidebar({ onOpenPalette }: { onOpenPalette: () => void }) {
             {formatNumber(user.xp)} / {formatNumber(user.nextLevelXp)} XP
           </p>
         </div>
+        <LanguageSwitcher compact className="w-full justify-between" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-2.5 rounded-md p-1.5 text-left transition-colors hover:bg-accent/60 data-[state=open]:bg-accent" data-testid="user-menu">

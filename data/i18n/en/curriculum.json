@@ -1,0 +1,96 @@
+{
+  "levels": {
+    "beginner": { "description": "First steps: how tables work and how to select, filter and sort data." },
+    "fundamentals": { "description": "Aggregation, grouping, conditional logic and working with dates and strings." },
+    "intermediate": { "description": "Table joins, set operations, subqueries and CTEs." },
+    "advanced": { "description": "Window functions, performance, indexes and transactions." },
+    "expert": { "description": "Complex analytical and engineering tasks close to real-world work." }
+  },
+  "modules": {
+    "beginner.intro": { "title": "What is SQL", "description": "Tables, rows, columns and your first query." },
+    "beginner.select": { "description": "Selecting columns and computed expressions." },
+    "beginner.from": { "description": "Data sources, table aliases and qualified column names." },
+    "beginner.where": { "description": "Filtering rows with conditions and comparison operators." },
+    "beginner.distinct": { "description": "Removing duplicates from the result." },
+    "beginner.order-by": { "description": "Sorting by one or several columns." },
+    "beginner.limit": { "description": "Limiting the number of rows and paginating with OFFSET." },
+    "beginner.logic": { "description": "Combining conditions and logical operator precedence." },
+    "beginner.in-between": { "description": "Checking membership in a list and a range." },
+    "beginner.like": { "description": "Pattern matching on strings." },
+    "beginner.null": { "description": "Missing values: IS NULL, COALESCE and three-valued logic." },
+    "fundamentals.count": { "description": "Counting rows and non-empty values." },
+    "fundamentals.sum": { "description": "Summing values and expressions." },
+    "fundamentals.avg": { "description": "Averages and how NULL affects them." },
+    "fundamentals.min-max": { "description": "Minimum and maximum for numbers, strings and dates." },
+    "fundamentals.group-by": { "description": "Grouping rows and per-group aggregates." },
+    "fundamentals.having": { "description": "Filtering groups after aggregation." },
+    "fundamentals.case": { "description": "Conditional expressions and data categorization." },
+    "fundamentals.aliases": { "title": "Aliases", "description": "Column and table aliases for readable queries." },
+    "fundamentals.dates": { "title": "Working with dates", "description": "date, strftime, julianday and date arithmetic in SQLite." },
+    "fundamentals.strings": { "title": "String functions", "description": "Concatenation, UPPER/LOWER, SUBSTR, LENGTH, REPLACE, TRIM, INSTR." },
+    "intermediate.inner-join": { "description": "Joining rows that have a match in both tables." },
+    "intermediate.left-join": { "description": "All rows of the left table plus matches from the right one." },
+    "intermediate.right-join": { "description": "All rows of the right table plus matches from the left one." },
+    "intermediate.full-join": { "description": "All rows of both tables, with NULL where there is no match." },
+    "intermediate.cross-join": { "description": "Cartesian product and generating combinations." },
+    "intermediate.self-join": { "description": "Joining a table with itself: hierarchies and pairs." },
+    "intermediate.union": { "description": "Combining results and removing duplicates." },
+    "intermediate.union-all": { "description": "Combining without removing duplicates, INTERSECT and EXCEPT." },
+    "intermediate.subqueries": { "title": "Subqueries", "description": "Scalar, table and correlated subqueries." },
+    "intermediate.exists": { "description": "Checking whether related rows exist." },
+    "intermediate.in-subquery": { "title": "IN with subqueries", "description": "Filtering by a list produced by a subquery." },
+    "intermediate.cte": { "description": "WITH common table expressions for readable queries." },
+    "intermediate.recursive": { "description": "Recursive CTEs: sequences and hierarchies." },
+    "advanced.window-basics": { "description": "Aggregates with OVER(): calculations without collapsing rows." },
+    "advanced.row-number": { "description": "Row numbering, deduplication and top-N per group." },
+    "advanced.rank": { "description": "Ranking with gaps after ties." },
+    "advanced.dense-rank": { "description": "Ranking without gaps, NTILE." },
+    "advanced.lag-lead": { "description": "Accessing the previous and the next row." },
+    "advanced.partition-by": { "description": "Window calculations inside groups." },
+    "advanced.running-total": { "description": "Running totals, moving averages and window frames." },
+    "advanced.cte-advanced": { "description": "Multiple CTEs, reuse and step-by-step calculations." },
+    "advanced.advanced-joins": { "title": "Advanced JOINs", "description": "Range joins, multiple conditions and anti-joins." },
+    "advanced.optimization": { "title": "Query optimization", "description": "How to write queries that run faster." },
+    "advanced.indexes": { "title": "Indexes", "description": "Creating indexes, composite and covering indexes." },
+    "advanced.explain": { "description": "Reading a query execution plan in SQLite." },
+    "advanced.transactions": { "title": "Transactions", "description": "INSERT, UPDATE, DELETE and atomic changes." },
+    "expert.analytics": { "title": "Complex analytical queries", "description": "Cohorts, shares and period-over-period comparisons." },
+    "expert.multi-cte": { "title": "Multi-level CTEs", "description": "Chains of CTEs for multi-step logic." },
+    "expert.recursive": { "title": "Recursive queries", "description": "Traversing graphs and trees of any depth." },
+    "expert.performance": { "title": "Performance tuning", "description": "Rewriting heavy queries and analyzing plans." },
+    "expert.business": { "title": "Complex business cases", "description": "Real-life tasks from product teams." },
+    "expert.data-analysis": { "title": "Data analysis", "description": "Distributions, medians, outliers and segmentation." },
+    "expert.data-analyst": { "title": "Data Analyst practice", "description": "Metrics, reports and dashboards in SQL." },
+    "expert.data-engineer": { "title": "Data Engineer practice", "description": "Data quality, deduplication, SCD and reconciliation." }
+  },
+  "projects": {
+    "p-shop-catalog": {
+      "title": "Online store catalog",
+      "description": "Build a store front: price and brand filters, sorting, pagination and careful handling of missing values."
+    },
+    "p-shop-report": {
+      "title": "Report for the store owner",
+      "description": "Prepare a monthly report: customer count, revenue, order statuses, repeat buyers and year-over-year dynamics."
+    },
+    "p-hr-analytics": {
+      "title": "Company HR analytics",
+      "description": "Understand the company structure: managers and reports, salaries relative to the department, employees without projects and the whole CTO team."
+    },
+    "p-sales-dashboard": {
+      "title": "Sales department dashboard",
+      "description": "Seller rankings, monthly dynamics, contribution to the region, running totals and revenue of managers' teams."
+    },
+    "p-bank-operations": {
+      "title": "A bank's operating day",
+      "description": "Run transfers and withdrawals inside transactions, keep an operations log and close an account without losing money."
+    },
+    "p-shop-analytics": {
+      "title": "Online store analytics",
+      "description": "A full analytics cycle: KPIs, revenue dynamics, cohorts, ABC analysis, dormant customers and data quality checks."
+    },
+    "p-sales-finance": {
+      "title": "Sales financial report",
+      "description": "Plan vs. actual, category margins, a regional pivot, a gap-free calendar and the distribution of deals."
+    }
+  }
+}

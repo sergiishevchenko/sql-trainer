@@ -84,11 +84,11 @@ function DashboardView({ data }: { data: DashboardData }) {
         <StatCard icon={Sparkles} label={t('dashboard.level')} value={user.level} hint={t(`ranks.${rankForLevel(user.level)}`)}>
           <Progress value={levelPercent} className="h-1" />
         </StatCard>
-        <StatCard icon={Zap} label={t('dashboard.totalXp')} value={formatNumber(user.xp)} hint={`${formatNumber(user.nextLevelXp - user.xp)} XP до уровня ${user.level + 1}`} accent="text-amber-400" />
+        <StatCard icon={Zap} label={t('dashboard.totalXp')} value={formatNumber(user.xp)} hint={t('dashboard.xpToLevel', { xp: formatNumber(user.nextLevelXp - user.xp), level: user.level + 1 })} accent="text-amber-400" />
         <StatCard icon={CheckCircle2} label={t('dashboard.solved')} value={`${totals.solved}`} hint={`${t('common.of')} ${totals.exercises} · ${formatPercent(totals.progress)}`} accent="text-success">
           <Progress value={totals.progress * 100} className="h-1" indicatorClassName="bg-success" />
         </StatCard>
-        <StatCard icon={Flame} label={t('dashboard.streak')} value={t('dashboard.days', { n: user.currentStreak })} hint={`Рекорд: ${user.longestStreak}`} accent="text-orange-400" />
+        <StatCard icon={Flame} label={t('dashboard.streak')} value={t('dashboard.days', { n: user.currentStreak })} hint={t('dashboard.record', { n: user.longestStreak })} accent="text-orange-400" />
         <StatCard icon={Clock} label={t('dashboard.learningTime')} value={formatDuration(user.learningSeconds)} accent="text-info" />
       </div>
 

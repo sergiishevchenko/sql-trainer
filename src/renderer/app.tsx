@@ -10,15 +10,6 @@ import { invoke, queryClient, useApi } from '@/lib/query'
 import { useAuthStore } from '@/stores/auth'
 import { AppRoutes } from './routes'
 
-function SettingsSync() {
-  const settings = useApi('settings:get')
-  const setLocale = useLocaleStore((s) => s.setLocale)
-  useEffect(() => {
-    if (settings.data) setLocale(settings.data.locale)
-  }, [settings.data, setLocale])
-  return null
-}
-
 function MotionPreferences({ children }: { children: React.ReactNode }) {
   const status = useAuthStore((s) => s.status)
   const settings = useApi('settings:get', undefined, { enabled: status === 'authenticated' })
@@ -38,17 +29,20 @@ function Splash() {
 function Bootstrap() {
   const status = useAuthStore((s) => s.status)
   const setUser = useAuthStore((s) => s.setUser)
+  const setLocale = useLocaleStore((s) => s.setLocale)
 
   useEffect(() => {
-    invoke('auth:session')
+    invoke('app:info')
+      .then((info) => setLocale(info.locale))
+      .catch(() => undefined)
+      .then(() => invoke('auth:session'))
       .then((user) => setUser(user))
       .catch(() => setUser(null))
-  }, [setUser])
+  }, [setUser, setLocale])
 
   if (status === 'loading') return <Splash />
   return (
     <MotionPreferences>
-      {status === 'authenticated' && <SettingsSync />}
       <AppRoutes authenticated={status === 'authenticated'} />
     </MotionPreferences>
   )

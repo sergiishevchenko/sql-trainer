@@ -29,8 +29,10 @@ export function createHandlers(app: AppContext, env: EnvironmentInfo): Handlers 
       ...env,
       exerciseCount: app.catalog.exercises.length,
       datasetCount: app.engine.datasets.ids().length,
-      invalidExercises: app.catalog.issues.filter((i) => i.exerciseId).length
+      invalidExercises: app.catalog.issues.filter((i) => i.exerciseId).length,
+      locale: app.locale.get()
     }),
+    'app:setLocale': (input) => ({ locale: app.locale.set(input.locale) }),
     'auth:accounts': () => app.users.accounts(),
     'auth:session': () => app.auth.restore(),
     'auth:register': (input) => app.auth.register(input),
@@ -52,8 +54,11 @@ export function createHandlers(app: AppContext, env: EnvironmentInfo): Handlers 
       await app.auth.deleteAccount(userId, input.password)
       return null
     },
-    'settings:get': (_input, { userId }) => app.users.settings(userId),
-    'settings:update': (input, { userId }) => app.users.updateSettings(userId, input),
+    'settings:get': (_input, { userId }) => ({ ...app.users.settings(userId), locale: app.locale.get() }),
+    'settings:update': (input, { userId }) => {
+      if (input.locale) app.locale.set(input.locale)
+      return { ...app.users.updateSettings(userId, input), locale: app.locale.get() }
+    },
     'dashboard:get': (_input, { userId }) => app.stats.dashboard(userId),
     'learning:levels': (_input, { userId }) => app.catalogService.levels(userId),
     'learning:module': (input, { userId }) => app.catalogService.moduleDetail(userId, input.moduleId),

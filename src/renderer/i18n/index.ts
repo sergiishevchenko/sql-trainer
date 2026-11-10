@@ -1,17 +1,24 @@
 import { create } from 'zustand'
+import { DEFAULT_LOCALE, type Locale } from '@shared/constants/locale'
 import { en } from './en'
 import { ru, type Dictionary } from './ru'
 
-export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
+export type { Locale } from '@shared/constants/locale'
 
 type Paths<T, P extends string = ''> = {
   [K in keyof T & string]: T[K] extends string ? `${P}${K}` : Paths<T[K], `${P}${K}.`>
 }[keyof T & string]
 
 export type TranslationKey = Paths<Dictionary>
-export type Locale = 'ru' | 'en'
 
-const dictionaries: Record<Locale, DeepPartial<Dictionary>> = { ru, en }
+export const dictionaries: Record<Locale, Dictionary> = { en, ru }
+
+const INTL_TAGS: Record<Locale, string> = { en: 'en-US', ru: 'ru-RU' }
+
+const PLURAL_ORDER: Record<Locale, Intl.LDMLPluralRule[]> = {
+  en: ['one', 'other'],
+  ru: ['one', 'few', 'many']
+}
 
 function lookup(dict: unknown, key: string): string | undefined {
   let node: unknown = dict
@@ -22,10 +29,24 @@ function lookup(dict: unknown, key: string): string | undefined {
   return typeof node === 'string' ? node : undefined
 }
 
+function pluralForm(locale: Locale, count: number, forms: string[]): string {
+  const category = new Intl.PluralRules(INTL_TAGS[locale]).select(count)
+  const index = PLURAL_ORDER[locale].indexOf(category)
+  return forms[index >= 0 ? index : forms.length - 1] ?? forms[forms.length - 1]
+}
+
+/**
+ * Resolves a dictionary key. `{name}` is replaced with a parameter and `{n:one|other}`
+ * picks a plural form for the numeric parameter `n` using the locale's plural rules.
+ */
 export function translate(locale: Locale, key: string, params?: Record<string, string | number>): string {
-  const template = lookup(dictionaries[locale], key) ?? lookup(ru, key) ?? key
+  const template = lookup(dictionaries[locale], key) ?? lookup(dictionaries[DEFAULT_LOCALE], key) ?? key
   if (!params) return template
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => (name in params ? String(params[name]) : `{${name}}`))
+  return template
+    .replace(/\{(\w+):([^}]+)\}/g, (match, name: string, forms: string) =>
+      name in params ? pluralForm(locale, Number(params[name]), forms.split('|')) : match
+    )
+    .replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
 }
 
 interface LocaleState {
@@ -34,8 +55,11 @@ interface LocaleState {
 }
 
 export const useLocaleStore = create<LocaleState>((set) => ({
-  locale: 'ru',
-  setLocale: (locale) => set({ locale })
+  locale: DEFAULT_LOCALE,
+  setLocale: (locale) => {
+    document.documentElement.lang = locale
+    set({ locale })
+  }
 }))
 
 export function useT() {
@@ -45,4 +69,8 @@ export function useT() {
 
 export function tMessage(key: string, params?: Record<string, string | number>): string {
   return translate(useLocaleStore.getState().locale, key, params)
+}
+
+export function intlLocale(): string {
+  return INTL_TAGS[useLocaleStore.getState().locale]
 }

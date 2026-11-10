@@ -100,6 +100,48 @@ describe('IPC dispatcher', () => {
   })
 })
 
+describe('localization', () => {
+  type ModuleDto = { title: string; theory: string; levelTitle: string }
+  type ExerciseDto = { title: string; description: string; hints: string[]; content: { options?: string[] } }
+
+  it('defaults to English, switches to Russian and remembers the choice after a restart', async () => {
+    expect((await call<{ locale: string }>('app:info')).locale).toBe('en')
+    await register()
+
+    const intro = await call<ModuleDto>('learning:module', { moduleId: 'beginner.intro' })
+    expect(intro.title).toBe('What is SQL')
+    expect(intro.theory).toContain('# What is SQL')
+    const explain = await call<ExerciseDto>('exercises:get', { exerciseId: 'b-intro-03' })
+    expect(explain.title).toBe('Read the query')
+    expect(explain.content.options?.[0]).toBe('Returns the name and city of every customer')
+    const untranslated = await call<ExerciseDto>('exercises:get', { exerciseId: 'b-select-02' })
+    expect(untranslated.title).toBe('10% off sale')
+    expect(untranslated.description).toBe(app.catalog.byId.get('b-select-02')!.description)
+    const blocked = await call<{ error?: { message: string } }>('exercises:run', {
+      exerciseId: 'b-intro-01',
+      answer: { kind: 'sql', sql: 'DROP TABLE customers' }
+    })
+    expect(blocked.error?.message).toContain('is not available in this exercise')
+
+    expect(await call('app:setLocale', { locale: 'ru' })).toEqual({ locale: 'ru' })
+    expect((await call<ModuleDto>('learning:module', { moduleId: 'beginner.intro' })).title).toBe('Что такое SQL')
+    expect((await call<{ locale: string }>('settings:get')).locale).toBe('ru')
+    const blockedRu = await call<{ error?: { message: string } }>('exercises:run', {
+      exerciseId: 'b-intro-01',
+      answer: { kind: 'sql', sql: 'DROP TABLE customers' }
+    })
+    expect(blockedRu.error?.message).toContain('недоступна в этом задании')
+
+    await app.close()
+    await open()
+    expect((await call<{ locale: string }>('app:info')).locale).toBe('ru')
+    expect((await failure('app:setLocale', { locale: 'de' })).code).toBe('validation')
+    await call('auth:login', { identifier: 'alice', password: PASSWORD })
+    await call('settings:update', { locale: 'en' })
+    expect((await call<{ locale: string }>('app:info')).locale).toBe('en')
+  })
+})
+
 describe('authentication', () => {
   it('registers with a hashed password and logs in by username or email', async () => {
     const { user, recoveryCode } = await register()

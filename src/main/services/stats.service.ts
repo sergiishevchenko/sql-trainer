@@ -142,7 +142,7 @@ export class StatsService {
         }
         return {
           moduleId: m.id,
-          title: m.title,
+          title: this.catalog.text.module(m).title,
           level: m.levelId,
           solved: list.filter((e) => progress.get(e.id)?.firstSolvedAt).length,
           total: list.length,
@@ -176,7 +176,7 @@ export class StatsService {
       return {
         id: a.id,
         exerciseId: a.exerciseId,
-        title: ex?.title ?? a.exerciseId,
+        title: ex ? this.catalog.text.exerciseTitle(ex) : a.exerciseId,
         type: ex?.type ?? 'write_query',
         correct: a.isCorrect,
         submittedAt: a.submittedAt,

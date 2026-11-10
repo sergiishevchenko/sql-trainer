@@ -9,7 +9,9 @@ import {
   type CurriculumProject,
   type ExerciseDefinition
 } from '@shared/schemas/content'
+import type { Locale } from '@shared/constants/locale'
 import { hasTopLevelOrderBy } from '../engine/guard'
+import { loadTranslations, type ContentTranslation } from './translations'
 
 export interface ResolvedModule {
   id: string
@@ -54,6 +56,7 @@ export interface Catalog {
   exercises: ResolvedExercise[]
   byId: Map<string, ResolvedExercise>
   projects: CurriculumProject[]
+  translations: Map<Locale, ContentTranslation>
   issues: ContentIssue[]
 }
 
@@ -229,12 +232,25 @@ export function loadCatalog(options: LoadOptions, datasetTables?: Map<string, Se
     }
   }
 
+  const projects = curriculum.projects.filter((p) => p.exercises.every((id) => byId.has(id)))
+  const loaded = loadTranslations(options.contentDir, {
+    levels: new Set(levels.map((l) => l.id)),
+    modules: new Set(modules.keys()),
+    projects: new Set(projects.map((p) => p.id)),
+    datasets: new Map(options.datasetIds.map((id) => [id, datasetTables?.get(id) ?? new Set<string>()])),
+    exercises: new Map(
+      exercises.map((ex) => [ex.id, { optionCount: ex.type === 'explain_query' ? ex.options.length : null }])
+    )
+  })
+  issues.push(...loaded.issues)
+
   return {
     levels,
     modules,
     exercises,
     byId,
-    projects: curriculum.projects.filter((p) => p.exercises.every((id) => byId.has(id))),
+    projects,
+    translations: loaded.translations,
     issues
   }
 }

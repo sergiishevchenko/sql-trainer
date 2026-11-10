@@ -12,6 +12,7 @@ import {
   users
 } from '../database/schema'
 import type { Catalog } from '../content/loader'
+import { getLocale } from '../i18n'
 import { localDate } from '../utils/date'
 import { isLevelCompleted } from './catalog.service'
 import { effectiveStreak } from './users.service'
@@ -149,7 +150,7 @@ export class AchievementsService {
         orm.insert(userAchievements).values({ userId, achievementId: def.id, unlockedAt: at }).onConflictDoNothing().run()
         grantXp(orm, userId, def.xpReward, today)
       }
-      return fresh.map((d) => ({ id: d.id, title: d.title, description: d.description, icon: d.icon, xpReward: d.xpReward }))
+      return fresh.map((d) => ({ id: d.id, title: d.title, description: d.description[getLocale()], icon: d.icon, xpReward: d.xpReward }))
     })
   }
 
@@ -160,7 +161,7 @@ export class AchievementsService {
     return ACHIEVEMENTS.map((def) => ({
       id: def.id,
       title: def.title,
-      description: def.description,
+      description: def.description[getLocale()],
       icon: def.icon,
       category: def.category,
       xpReward: def.xpReward,

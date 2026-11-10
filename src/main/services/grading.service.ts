@@ -6,6 +6,7 @@ import type { ProgramOutcome } from '../engine/jobs'
 import type { SqlEngine } from '../engine/sql-engine'
 import { allowedStatements, AnswerError, answerToSql, isQueryExercise, referencePrograms } from '../content/programs'
 import type { ResolvedExercise } from '../content/loader'
+import { tr } from '../i18n'
 
 interface Scenario {
   name: string
@@ -21,12 +22,12 @@ export class GradingService {
   constructor(private readonly engine: SqlEngine) {}
 
   scenarios(ex: ResolvedExercise): Scenario[] {
-    const list: Scenario[] = [{ name: 'Основной тест', hidden: false, setup: [] }]
+    const list: Scenario[] = [{ name: tr('grading.mainTest'), hidden: false, setup: [] }]
     const datasetHidden = this.engine.datasets.hiddenSetup(ex.dataset)
-    if (datasetHidden) list.push({ name: 'Скрытый тест 1', hidden: true, setup: [datasetHidden] })
+    if (datasetHidden) list.push({ name: tr('grading.hiddenTest', { n: 1 }), hidden: true, setup: [datasetHidden] })
     if (isQueryExercise(ex)) {
       for (const test of ex.hidden ?? []) {
-        list.push({ name: test.name ?? `Скрытый тест ${list.length}`, hidden: true, setup: [test.setup] })
+        list.push({ name: tr('grading.hiddenTest', { n: list.length }), hidden: true, setup: [test.setup] })
       }
     }
     return list
@@ -94,9 +95,9 @@ export class GradingService {
 
   async grade(ex: ResolvedExercise, answer: ExerciseAnswer): Promise<GradeResult> {
     if (ex.type === 'explain_query') {
-      if (answer.kind !== 'option') return this.answerError('Выберите один из вариантов')
+      if (answer.kind !== 'option') return this.answerError(tr('grading.chooseOption'))
       const correct = answer.option === ex.correct
-      return { correct, scenarios: [{ name: 'Ответ', hidden: false, passed: correct }] }
+      return { correct, scenarios: [{ name: tr('grading.answer'), hidden: false, passed: correct }] }
     }
     if (ex.type === 'predict_result') return this.gradePrediction(ex, answer)
     return this.gradeProgram(ex, answer)
@@ -111,19 +112,19 @@ export class GradingService {
     if (!response.ok) return { error: response.error }
     if (!response.result.execution.ok) return { error: response.result.execution.error }
     const result = response.result.result
-    if (!result) return { error: { code: 'internal', message: 'Запрос задания не вернул результат' } }
+    if (!result) return { error: { code: 'internal', message: tr('grading.noResult') } }
     const answer = ex.ask === 'rowCount' ? String(result.rows.length) : formatCellForAnswer(result.rows[0]?.[0] ?? null)
     return { answer, result }
   }
 
   private async gradePrediction(ex: Extract<ResolvedExercise, { type: 'predict_result' }>, answer: ExerciseAnswer): Promise<GradeResult> {
-    if (answer.kind !== 'value' || !answer.value.trim()) return this.answerError('Введите ответ')
+    if (answer.kind !== 'value' || !answer.value.trim()) return this.answerError(tr('grading.enterAnswer'))
     const expected = await this.predictionAnswer(ex)
     if ('error' in expected) return { correct: false, error: expected.error, scenarios: [] }
     const correct = answersMatch(expected.answer, answer.value)
     return {
       correct,
-      scenarios: [{ name: 'Ответ', hidden: false, passed: correct }],
+      scenarios: [{ name: tr('grading.answer'), hidden: false, passed: correct }],
       expectedResult: correct ? expected.result : null,
       executedSql: ex.sql
     }
@@ -157,7 +158,7 @@ export class GradingService {
       const message = failed.ok ? '' : failed.error.message
       return {
         correct: false,
-        error: { code: 'internal', message: `Эталонное решение задания не выполнилось: ${message}` },
+        error: { code: 'internal', message: tr('grading.referenceFailed', { message }) },
         scenarios: [],
         executedSql: prepared.sql
       }

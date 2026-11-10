@@ -1,5 +1,6 @@
 import { ENGINE_LIMITS, type StatementKind } from '@shared/constants/domain'
 import type { EngineError } from '@shared/types/engine'
+import { tr } from '../i18n'
 
 type TokenType = 'word' | 'ident' | 'string' | 'number' | 'punct' | 'semicolon'
 
@@ -50,7 +51,7 @@ export function tokenize(sql: string): Token[] {
     }
     if (ch === '/' && sql[i + 1] === '*') {
       const end = sql.indexOf('*/', i + 2)
-      if (end === -1) throw new SqlTokenizeError('Незакрытый многострочный комментарий')
+      if (end === -1) throw new SqlTokenizeError(tr('guard.unterminatedComment'))
       i = end + 2
       continue
     }
@@ -58,7 +59,7 @@ export function tokenize(sql: string): Token[] {
       let j = i + 1
       let value = ''
       for (;;) {
-        if (j >= n) throw new SqlTokenizeError('Незакрытая строковая константа')
+        if (j >= n) throw new SqlTokenizeError(tr('guard.unterminatedString'))
         if (sql[j] === "'") {
           if (sql[j + 1] === "'") {
             value += "'"
@@ -79,7 +80,7 @@ export function tokenize(sql: string): Token[] {
       let j = i + 1
       let value = ''
       for (;;) {
-        if (j >= n) throw new SqlTokenizeError('Незакрытый идентификатор в кавычках')
+        if (j >= n) throw new SqlTokenizeError(tr('guard.unterminatedIdentifier'))
         if (sql[j] === close) {
           if (close !== ']' && sql[j + 1] === close) {
             value += close
@@ -168,14 +169,14 @@ function verbToKind(verb: string): StatementKind | null {
 export function classifyStatement(tokens: Token[]): ClassifiedStatement {
   const first = tokens[0]
   if (!first || first.type !== 'word') {
-    return { kind: 'forbidden', tokens, reason: 'Запрос должен начинаться с ключевого слова SQL' }
+    return { kind: 'forbidden', tokens, reason: tr('guard.mustStartWithKeyword') }
   }
   const verb = first.upper
   if (verb === 'EXPLAIN') return { kind: 'select', tokens }
   if (verb === 'WITH') {
     const main = mainVerbAfterWith(tokens)
     const kind = main ? verbToKind(main) : null
-    return kind ? { kind, tokens } : { kind: 'forbidden', tokens, reason: 'Не удалось определить основной оператор после WITH' }
+    return kind ? { kind, tokens } : { kind: 'forbidden', tokens, reason: tr('guard.unknownAfterWith') }
   }
   const simple = verbToKind(verb)
   if (simple) return { kind: simple, tokens }
@@ -185,12 +186,12 @@ export function classifyStatement(tokens: Token[]): ClassifiedStatement {
     if (target === 'TABLE') return { kind: 'create_table', tokens }
     if (target === 'INDEX') return { kind: 'create_index', tokens }
     if (target === 'VIEW') return { kind: 'create_view', tokens }
-    return { kind: 'forbidden', tokens, reason: `CREATE ${target ?? ''} запрещён`.trim() }
+    return { kind: 'forbidden', tokens, reason: tr('guard.createForbidden', { target: target ?? '' }).replace(/\s+/g, ' ') }
   }
   if (verb === 'DROP') return { kind: 'drop', tokens }
   if (verb === 'ALTER') return { kind: 'alter', tokens }
   if (TRANSACTION_WORDS.has(verb)) return { kind: 'transaction', tokens }
-  return { kind: 'forbidden', tokens, reason: `Оператор ${verb} запрещён` }
+  return { kind: 'forbidden', tokens, reason: tr('guard.statementForbidden', { verb }) }
 }
 
 const KIND_LABELS: Record<StatementKind, string> = {
@@ -214,7 +215,7 @@ export type GuardResult = { ok: true; statements: ClassifiedStatement[] } | { ok
  */
 export function guardSql(sql: string, policy: SqlPolicy): GuardResult {
   if (sql.length > ENGINE_LIMITS.maxSqlLength) {
-    return { ok: false, error: { code: 'limit', message: `Запрос слишком длинный (максимум ${ENGINE_LIMITS.maxSqlLength} символов)` } }
+    return { ok: false, error: { code: 'limit', message: tr('guard.tooLong', { max: ENGINE_LIMITS.maxSqlLength }) } }
   }
   let tokens: Token[]
   try {
@@ -224,11 +225,11 @@ export function guardSql(sql: string, policy: SqlPolicy): GuardResult {
   }
   const raw = splitStatements(tokens)
   if (raw.length === 0) {
-    return { ok: false, error: { code: 'syntax', message: 'Пустой запрос: напишите хотя бы одну SQL-команду' } }
+    return { ok: false, error: { code: 'syntax', message: tr('guard.empty') } }
   }
   const maxStatements = policy.maxStatements ?? ENGINE_LIMITS.maxStatements
   if (raw.length > maxStatements) {
-    return { ok: false, error: { code: 'limit', message: `Слишком много команд в одном запуске (максимум ${maxStatements})` } }
+    return { ok: false, error: { code: 'limit', message: tr('guard.tooManyStatements', { max: maxStatements }) } }
   }
 
   const allowed = new Set(policy.allowed)
@@ -237,12 +238,12 @@ export function guardSql(sql: string, policy: SqlPolicy): GuardResult {
     for (let i = 0; i < stmtTokens.length; i += 1) {
       const t = stmtTokens[i]
       if (t.type === 'word' && ALWAYS_FORBIDDEN_WORDS.has(t.upper)) {
-        return { ok: false, error: { code: 'forbidden', message: `Команда ${t.upper} запрещена в учебной среде` } }
+        return { ok: false, error: { code: 'forbidden', message: tr('guard.alwaysForbidden', { command: t.upper }) } }
       }
     }
     const classified = classifyStatement(stmtTokens)
     if (classified.kind === 'forbidden') {
-      return { ok: false, error: { code: 'forbidden', message: classified.reason ?? 'Запрещённая команда' } }
+      return { ok: false, error: { code: 'forbidden', message: classified.reason ?? tr('guard.forbidden') } }
     }
     if (!allowed.has(classified.kind)) {
       const allowedList = policy.allowed.map((k) => KIND_LABELS[k]).join(', ')
@@ -250,7 +251,7 @@ export function guardSql(sql: string, policy: SqlPolicy): GuardResult {
         ok: false,
         error: {
           code: 'forbidden',
-          message: `Команда ${KIND_LABELS[classified.kind]} недоступна в этом задании. Разрешено: ${allowedList}`
+          message: tr('guard.notAllowed', { command: KIND_LABELS[classified.kind], allowed: allowedList })
         }
       }
     }
@@ -261,13 +262,13 @@ export function guardSql(sql: string, policy: SqlPolicy): GuardResult {
           (WRITE_WORDS.has(t.upper) || (t.upper === 'REPLACE' && stmtTokens[idx + 1]?.value !== '('))
       )
       if (write) {
-        return { ok: false, error: { code: 'forbidden', message: `Команда ${write.upper} недоступна в этом задании` } }
+        return { ok: false, error: { code: 'forbidden', message: tr('guard.writeNotAllowed', { command: write.upper }) } }
       }
     }
     if (classified.kind !== 'select' && classified.kind !== 'transaction') {
       const systemTable = stmtTokens.find((t) => (t.type === 'word' || t.type === 'ident') && t.value.toLowerCase().startsWith('sqlite_'))
       if (systemTable) {
-        return { ok: false, error: { code: 'forbidden', message: 'Изменение системных таблиц SQLite запрещено' } }
+        return { ok: false, error: { code: 'forbidden', message: tr('guard.systemTables') } }
       }
     }
     statements.push(classified)

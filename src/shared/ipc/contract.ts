@@ -17,12 +17,14 @@ import {
   exerciseIdSchema,
   heartbeatSchema,
   historyQuerySchema,
+  localeInputSchema,
   noteInputSchema,
   playgroundRunSchema,
   runInputSchema,
   settingsUpdateSchema,
   submitInputSchema
 } from '../schemas/ipc'
+import type { Locale } from '../constants/locale'
 import type { DatasetSchema, DatasetSummary } from '../types/engine'
 import type {
   CatalogFacets,
@@ -55,10 +57,12 @@ export interface AppInfo {
   exerciseCount: number
   datasetCount: number
   invalidExercises: number
+  locale: Locale
 }
 
 export const ipcContract = {
   'app:info': { input: emptyInput, auth: false },
+  'app:setLocale': { input: localeInputSchema, auth: false },
   'auth:accounts': { input: emptyInput, auth: false },
   'auth:session': { input: emptyInput, auth: false },
   'auth:register': { input: registerSchema, auth: false },
@@ -104,6 +108,7 @@ export const ipcContract = {
 
 export interface IpcOutputs {
   'app:info': AppInfo
+  'app:setLocale': { locale: Locale }
   'auth:accounts': AccountSummary[]
   'auth:session': UserProfile | null
   'auth:register': AuthResult

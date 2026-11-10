@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { ACHIEVEMENTS } from '@shared/constants/achievements'
 import { EXERCISE_TYPES, LEVEL_IDS } from '@shared/constants/domain'
+import { LOCALES } from '@shared/constants/locale'
 import type { ExerciseAnswer } from '@shared/types/exercise'
 import { answersMatch } from '../../src/main/engine/compare'
 import { orderPieces } from '../../src/main/content/programs'
@@ -64,6 +66,39 @@ describe('content catalog', () => {
       seen.set(key, ex.id)
     }
     expect(duplicates).toEqual([])
+  })
+
+  it('ships an English overlay for the curriculum, datasets, achievements and every exercise title', () => {
+    const en = fx.catalog.translations.get('en')
+    expect(en).toBeDefined()
+    const missing: string[] = []
+    for (const level of fx.catalog.levels) {
+      if (!en!.levels.get(level.id)?.description) missing.push(`level ${level.id}`)
+      for (const m of level.modules) if (!en!.modules.get(m.id)?.description) missing.push(`module ${m.id}`)
+    }
+    for (const p of fx.catalog.projects) {
+      const text = en!.projects.get(p.id)
+      if (!text?.title || !text.description) missing.push(`project ${p.id}`)
+    }
+    for (const id of fx.store.ids()) {
+      const text = en!.datasets.get(id)
+      if (!text?.description) missing.push(`dataset ${id}`)
+      for (const table of fx.store.describe(id).tables) {
+        if (!text?.tables[table.name]) missing.push(`dataset ${id}.${table.name}`)
+      }
+    }
+    const seen = new Map<string, string>()
+    for (const ex of fx.catalog.exercises) {
+      const title = en!.exercises.get(ex.id)?.title
+      if (!title) missing.push(`exercise ${ex.id}`)
+      const key = `${ex.module}::${title}`
+      if (title && seen.has(key)) missing.push(`exercise ${ex.id} duplicates the English title of ${seen.get(key)}`)
+      seen.set(key, ex.id)
+    }
+    for (const a of ACHIEVEMENTS) {
+      for (const locale of LOCALES) if (!a.description[locale]?.trim()) missing.push(`achievement ${a.id} (${locale})`)
+    }
+    expect(missing).toEqual([])
   })
 
   it('every reference answer is accepted and every distractor rejected by the real grader', async () => {

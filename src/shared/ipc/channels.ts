@@ -1,5 +1,6 @@
 export const IPC_CHANNELS = [
   'app:info',
+  'app:setLocale',
   'auth:accounts',
   'auth:session',
   'auth:register',

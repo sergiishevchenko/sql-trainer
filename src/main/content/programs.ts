@@ -1,6 +1,7 @@
 import type { StatementKind } from '@shared/constants/domain'
 import type { ExerciseAnswer, PublicExerciseContent } from '@shared/types/exercise'
 import type { ExerciseDefinition } from '@shared/schemas/content'
+import { tr } from '../i18n'
 import { fillTemplate, type ResolvedExercise } from './loader'
 
 type JoinBuilderExercise = Extract<ExerciseDefinition, { type: 'join_builder' }>
@@ -58,7 +59,7 @@ export function buildJoinSql(
   const right = quoteIdent(choice.right)
   let sql = `SELECT ${ex.select}\nFROM ${left}\n${choice.join} JOIN ${right}`
   if (choice.join !== 'CROSS') {
-    if (!choice.leftColumn || !choice.rightColumn) throw new AnswerError('Выберите столбцы для условия соединения')
+    if (!choice.leftColumn || !choice.rightColumn) throw new AnswerError(tr('answer.joinColumns'))
     sql += ` ON ${left}.${quoteIdent(choice.leftColumn)} = ${right}.${quoteIdent(choice.rightColumn)}`
   }
   if (ex.suffix) sql += `\n${ex.suffix}`
@@ -123,50 +124,50 @@ export function answerToSql(ex: ResolvedExercise, answer: ExerciseAnswer, knownC
     case 'fix_bug':
     case 'business_case':
     case 'challenge':
-      if (answer.kind !== 'sql') throw new AnswerError('Ожидается SQL-запрос')
+      if (answer.kind !== 'sql') throw new AnswerError(tr('answer.sqlExpected'))
       return answer.sql
     case 'choose_query':
-      if (answer.kind !== 'option' || answer.option >= ex.options.length) throw new AnswerError('Выберите один из вариантов')
+      if (answer.kind !== 'option' || answer.option >= ex.options.length) throw new AnswerError(tr('answer.chooseOption'))
       return ex.options[answer.option]
     case 'fill_blank': {
-      if (answer.kind !== 'blanks' || answer.blanks.length !== ex.answers.length) throw new AnswerError('Заполните все пропуски')
+      if (answer.kind !== 'blanks' || answer.blanks.length !== ex.answers.length) throw new AnswerError(tr('answer.fillAllBlanks'))
       const values = answer.blanks.map((b, i) => {
         const value = b.trim()
-        if (!value) throw new AnswerError(`Пропуск №${i + 1} не заполнен`)
-        if (value.includes(';')) throw new AnswerError('Пропуск не может содержать точку с запятой')
+        if (!value) throw new AnswerError(tr('answer.blankEmpty', { n: i + 1 }))
+        if (value.includes(';')) throw new AnswerError(tr('answer.blankSemicolon'))
         const choices = ex.choices?.[i]
-        if (choices && !choices.includes(value)) throw new AnswerError(`Недопустимое значение для пропуска №${i + 1}`)
+        if (choices && !choices.includes(value)) throw new AnswerError(tr('answer.blankInvalid', { n: i + 1 }))
         return value
       })
       return fillTemplate(ex.template, values)
     }
     case 'order_parts': {
-      if (answer.kind !== 'parts' || answer.parts.length === 0) throw new AnswerError('Соберите запрос из фрагментов')
+      if (answer.kind !== 'parts' || answer.parts.length === 0) throw new AnswerError(tr('answer.assemble'))
       const pieces = orderPieces(ex)
-      if (new Set(answer.parts).size !== answer.parts.length) throw new AnswerError('Каждый фрагмент можно использовать один раз')
+      if (new Set(answer.parts).size !== answer.parts.length) throw new AnswerError(tr('answer.pieceOnce'))
       return answer.parts
         .map((index) => {
           const piece = pieces[index]
-          if (piece === undefined) throw new AnswerError('Неизвестный фрагмент')
+          if (piece === undefined) throw new AnswerError(tr('answer.unknownPiece'))
           return piece
         })
         .join('\n')
     }
     case 'join_builder': {
-      if (answer.kind !== 'join') throw new AnswerError('Настройте соединение таблиц')
-      if (!ex.tables.includes(answer.left) || !ex.tables.includes(answer.right)) throw new AnswerError('Выберите таблицы из списка')
+      if (answer.kind !== 'join') throw new AnswerError(tr('answer.configureJoin'))
+      if (!ex.tables.includes(answer.left) || !ex.tables.includes(answer.right)) throw new AnswerError(tr('answer.chooseTables'))
       if (answer.join !== 'CROSS') {
         if (!answer.leftColumn || !knownColumns(answer.left).includes(answer.leftColumn)) {
-          throw new AnswerError('Выберите столбец левой таблицы')
+          throw new AnswerError(tr('answer.chooseLeftColumn'))
         }
         if (!answer.rightColumn || !knownColumns(answer.right).includes(answer.rightColumn)) {
-          throw new AnswerError('Выберите столбец правой таблицы')
+          throw new AnswerError(tr('answer.chooseRightColumn'))
         }
       }
       return buildJoinSql(ex, answer)
     }
     default:
-      throw new AnswerError('Это задание не выполняет SQL')
+      throw new AnswerError(tr('answer.noSql'))
   }
 }
 

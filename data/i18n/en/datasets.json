@@ -1,0 +1,65 @@
+{
+  "banking": {
+    "description": "A bank: branches, clients, accounts in different currencies, transactions and loans.",
+    "tables": {
+      "branches": "Bank branches",
+      "clients": "Bank clients and their segment",
+      "accounts": "Client accounts (closed_at = NULL means the account is open)",
+      "transactions": "Account operations: a positive amount is a deposit, a negative one is a withdrawal",
+      "loans": "Client loans"
+    }
+  },
+  "ecommerce": {
+    "description": "An online store: customers, products, categories, orders, order items and reviews.",
+    "tables": {
+      "categories": "Product categories (hierarchy via parent_id)",
+      "customers": "Store customers",
+      "products": "Product catalog",
+      "orders": "Customer orders",
+      "order_items": "Order items: product, quantity and price at the time of purchase",
+      "reviews": "Customer product reviews (rating 1–5)"
+    }
+  },
+  "employees": {
+    "description": "A company HR database: departments, employees with a reporting hierarchy, projects, project assignments and salary history.",
+    "tables": {
+      "departments": "Company departments",
+      "employees": "Employees (manager_id references the manager)",
+      "projects": "Department projects (end_date = NULL means the project is ongoing)",
+      "employee_projects": "Employee project assignments and hours worked",
+      "salary_history": "History of salary changes"
+    }
+  },
+  "movies": {
+    "description": "A movie database: films, genres, directors, actors, roles and audience reviews.",
+    "tables": {
+      "genres": "Genres",
+      "directors": "Directors",
+      "movies": "Movies: budget and box office in millions of dollars (box_office_musd = NULL means no data)",
+      "actors": "Actors",
+      "movie_cast": "Actor roles in movies (billing_order is the order in the credits)",
+      "reviews": "Audience reviews (rating 1–10)"
+    }
+  },
+  "sales": {
+    "description": "Sales analytics of a B2B company for the first half of 2024: regions, sales reps, products, deals and monthly targets.",
+    "tables": {
+      "regions": "Sales regions",
+      "sales_reps": "Sales reps (manager_id references the manager)",
+      "products": "Products: unit cost and unit price",
+      "sales": "Deals: revenue = quantity * unit_price * (1 - discount)",
+      "monthly_targets": "Monthly sales targets per rep (month in YYYY-MM format)"
+    }
+  },
+  "university": {
+    "description": "A university: faculties, professors, courses with prerequisites, students and their grades.",
+    "tables": {
+      "faculties": "Faculties",
+      "professors": "Professors",
+      "courses": "Courses (professor_id may be NULL)",
+      "prerequisites": "Prerequisites: which course must be completed before another one",
+      "students": "Students (faculty_id = NULL means no major chosen yet)",
+      "enrollments": "Course enrollments and grades 0–100 (NULL means the course is still in progress)"
+    }
+  }
+}

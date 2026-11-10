@@ -1,4 +1,5 @@
 import type { RankKey } from '../constants/levels'
+import type { Locale } from '../constants/locale'
 
 export interface UserProfile {
   id: string
@@ -29,7 +30,7 @@ export interface AccountSummary {
 }
 
 export interface UserSettingsDto {
-  locale: 'ru' | 'en'
+  locale: Locale
   dailyGoal: number
   editorFontSize: number
   editorMinimap: boolean

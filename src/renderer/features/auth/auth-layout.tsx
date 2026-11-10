@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { CheckCircle2, Database, Lock, Trophy } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { LanguageSwitcher } from '@/components/common/language-switcher'
 import { useT } from '@/i18n'
 import { useApi } from '@/lib/query'
 
@@ -8,15 +9,21 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
   const t = useT()
   const info = useApi('app:info')
   const features = [
-    { icon: Database, text: info.data ? `${info.data.exerciseCount} интерактивных заданий на ${info.data.datasetCount} учебных базах` : 'Интерактивные задания на учебных базах данных' },
-    { icon: CheckCircle2, text: 'Мгновенная проверка решений на реальном SQLite со скрытыми тестами' },
-    { icon: Trophy, text: 'Уровни, XP, достижения, серии и подробная статистика' },
+    {
+      icon: Database,
+      text: info.data
+        ? t('auth.features.exercises', { exercises: info.data.exerciseCount, datasets: info.data.datasetCount })
+        : t('auth.features.exercisesFallback')
+    },
+    { icon: CheckCircle2, text: t('auth.features.grading') },
+    { icon: Trophy, text: t('auth.features.gamification') },
     { icon: Lock, text: t('auth.localNotice') }
   ]
 
   return (
     <div className="flex h-full">
       <div className="drag-region fixed inset-x-0 top-0 z-10 h-8" />
+      <LanguageSwitcher className="fixed top-10 right-6 z-20" />
       <aside className="relative hidden w-[46%] max-w-[640px] flex-col justify-between overflow-hidden border-r bg-sidebar p-10 lg:flex">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
         <div className="glow pointer-events-none absolute inset-0" />

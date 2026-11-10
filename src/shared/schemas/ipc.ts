@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { LOCALES } from '../constants/locale'
 import {
   ASSESSMENT_KINDS,
   DIFFICULTIES,
@@ -69,9 +70,13 @@ export const noteInputSchema = z.object({
   content: z.string().max(10000)
 })
 
+export const localeSchema = z.enum(LOCALES)
+
+export const localeInputSchema = z.object({ locale: localeSchema })
+
 export const settingsUpdateSchema = z
   .object({
-    locale: z.enum(['ru', 'en']),
+    locale: localeSchema,
     dailyGoal: z.number().int().min(10).max(1000),
     editorFontSize: z.number().int().min(10).max(24),
     editorMinimap: z.boolean(),
